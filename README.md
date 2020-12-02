@@ -2,10 +2,10 @@
 
 A lightweight game engine implemented with C++ and Vulkan.
 
-## Prerequisities
+## Dependencies
 - Vulkan SDK
 - GLM
 - GLFW
 
 ## Notes
-- Vulkan SDK should be installed somewhere, and be configured in project properties
+- Vulkan SDK should be installed first to compile shaders
