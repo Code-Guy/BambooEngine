@@ -72,9 +72,11 @@ private:
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 		window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Window", nullptr, nullptr);
+		glfwSetWindowUserPointer(window, this);
+		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	}
 
 	void initVulkan()
@@ -84,13 +86,8 @@ private:
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
-		createSwapChain();
-		createImageViews();
-		createRenderPass();
-		createGraphicsPipeline();
-		createFramebuffers();
 		createCommandPool();
-		createCommandBuffers();
+		createSwapchainResources();
 		createSyncObjects();
 	}
 
@@ -107,6 +104,8 @@ private:
 
 	void cleanup()
 	{
+		cleanupSwapchainResources();
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
@@ -115,20 +114,6 @@ private:
 		}
 
 		vkDestroyCommandPool(device, commandPool, nullptr);
-		for (auto& swapchainFramebuffer : swapchainFramebuffers)
-		{
-			vkDestroyFramebuffer(device, swapchainFramebuffer, nullptr);
-		}
-		vkDestroyPipeline(device, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-		vkDestroyRenderPass(device, renderPass, nullptr);
-
-		for (auto& swapchainImageView : swapchainImageViews)
-		{
-			vkDestroyImageView(device, swapchainImageView, nullptr);
-		}
-
-		vkDestroySwapchainKHR(device, swapchain, nullptr);
 		vkDestroyDevice(device, nullptr);
 
 		if (enableValidationLayers)
@@ -150,9 +135,20 @@ private:
 		// 等待指令提交完毕
 		vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
-		// 获取当前可用Image的索引，这里会等待上一帧渲染完毕
+		// 获取当前可用Image的索引，这里会等待交换链有空闲的Image
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+		// 检测是否要重建交换链
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			recreateSwapchain();
+			return;
+		}
+		if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			throw std::runtime_error("failed to acquire swap chain image!");
+		}
 
 		// 如果当前Image正在被CPU提交数据，等待CPU
 		if (imagesInFlight[imageIndex] != VK_NULL_HANDLE)
@@ -196,7 +192,17 @@ private:
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 
-		vkQueuePresentKHR(presentQueue, &presentInfo);
+		result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+		// 检测是否要重建交换链
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || bFramebufferResized)
+		{
+			recreateSwapchain();
+		}
+		else if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to present swap chain image!");
+		}
 
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
@@ -366,6 +372,60 @@ private:
 		// get queue
 		vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 		vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+	}
+
+	void cleanupSwapchainResources()
+	{
+		for (auto& swapchainFramebuffer : swapchainFramebuffers)
+		{
+			vkDestroyFramebuffer(device, swapchainFramebuffer, nullptr);
+		}
+
+		// 清理Command Pool，避免重建Command Pool
+		vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+
+		vkDestroyPipeline(device, graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		vkDestroyRenderPass(device, renderPass, nullptr);
+
+		for (auto& swapchainImageView : swapchainImageViews)
+		{
+			vkDestroyImageView(device, swapchainImageView, nullptr);
+		}
+
+		vkDestroySwapchainKHR(device, swapchain, nullptr);
+	}
+
+	void recreateSwapchain()
+	{
+		// 处理最小化的情况
+		int width = 0;
+		int height = 0;
+		glfwGetFramebufferSize(window, &width, &height);
+		while (width == 0 || height == 0)
+		{
+			glfwGetFramebufferSize(window, &width, &height);
+			glfwWaitEvents();
+		}
+
+		// 等待所有的资源都处于闲置状态，不再被使用
+		vkDeviceWaitIdle(device);
+
+		// 然后再清理和创建交换链和依赖交换链的所有资源，不然会报错
+		cleanupSwapchainResources();
+
+		// 把和交换链相关的参数设置成动态状态，可以避免重建整个图形管线
+		createSwapchainResources();
+	}
+
+	void createSwapchainResources()
+	{
+		createSwapChain();
+		createImageViews();
+		createRenderPass();
+		createGraphicsPipeline();
+		createFramebuffers();
+		createCommandBuffers();
 	}
 
 	void createSwapChain()
@@ -1005,8 +1065,14 @@ private:
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData) {
-
+		void* pUserData) 
+	{
+		// 屏蔽掉特定的调试输出
+		if (std::string(pCallbackData->pMessage).find("VkLayer_nsight-sys_windows.json") != std::string::npos)
+		{
+			return VK_FALSE;
+		}
+		
 		if (messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{
 			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
@@ -1033,6 +1099,12 @@ private:
 		file.close();
 
 		return buffer;
+	}
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+		app->bFramebufferResized = true;
 	}
 
 	GLFWwindow* window;
@@ -1067,6 +1139,8 @@ private:
 	std::vector<VkFence> inFlightFences;
 	std::vector<VkFence> imagesInFlight;
 	size_t currentFrame = 0;
+
+	bool bFramebufferResized = false;
 
 	const std::vector<const char*> validationLayers = 
 	{ 
