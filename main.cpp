@@ -11,20 +11,23 @@
 #include <string>
 #include <optional>
 
-// 由于CreateDebugUtilsMessengerEXT函数是一个扩展函数，因此需要手动查找和加载
+// 由于CreateDebugUtilsMessengerEXT和DestroyDebugUtilsMessengerEXT函数属于扩展函数，因此需要手动查找和加载
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	if (func != nullptr) {
+	if (func != nullptr) 
+	{
 		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
 	}
-	else {
+	else 
+	{
 		return VK_ERROR_EXTENSION_NOT_PRESENT;
 	}
 }
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
+	if (func != nullptr) 
+	{
 		func(instance, debugMessenger, pAllocator);
 	}
 }
@@ -48,8 +51,7 @@ private:
 
 		bool isComplete() const
 		{
-			return graphicsFamily.has_value() &&
-				presentFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
@@ -73,7 +75,6 @@ private:
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 		window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Window", nullptr, nullptr);
-
 	}
 
 	void initVulkan()
@@ -104,6 +105,46 @@ private:
 		vkDeviceWaitIdle(device);
 	}
 
+	void cleanup()
+	{
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(device, inFlightFences[i], nullptr);
+		}
+
+		vkDestroyCommandPool(device, commandPool, nullptr);
+		for (auto& swapchainFramebuffer : swapchainFramebuffers)
+		{
+			vkDestroyFramebuffer(device, swapchainFramebuffer, nullptr);
+		}
+		vkDestroyPipeline(device, graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		vkDestroyRenderPass(device, renderPass, nullptr);
+
+		for (auto& swapchainImageView : swapchainImageViews)
+		{
+			vkDestroyImageView(device, swapchainImageView, nullptr);
+		}
+
+		vkDestroySwapchainKHR(device, swapchain, nullptr);
+		vkDestroyDevice(device, nullptr);
+
+		if (enableValidationLayers)
+		{
+			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+		}
+
+		vkDestroySurfaceKHR(instance, surface, nullptr);
+
+		// 所有的Vulkan资源都需要在DestroyInstance前清理
+		vkDestroyInstance(instance, nullptr);
+
+		glfwDestroyWindow(window);
+		glfwTerminate();
+	}
+
 	void drawFrame()
 	{
 		// 等待指令提交完毕
@@ -111,7 +152,7 @@ private:
 
 		// 获取当前可用Image的索引，这里会等待上一帧渲染完毕
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+		vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
 		// 如果当前Image正在被CPU提交数据，等待CPU
 		if (imagesInFlight[imageIndex] != VK_NULL_HANDLE)
@@ -149,55 +190,15 @@ private:
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
 
-		VkSwapchainKHR swapChains[] = { swapChain };
+		VkSwapchainKHR swapchains[] = { swapchain };
 		presentInfo.swapchainCount = 1;
-		presentInfo.pSwapchains = swapChains;
+		presentInfo.pSwapchains = swapchains;
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 
 		vkQueuePresentKHR(presentQueue, &presentInfo);
 
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-	}
-
-	void cleanup()
-	{
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(device, inFlightFences[i], nullptr);
-		}
-
-		vkDestroyCommandPool(device, commandPool, nullptr);
-		for (auto& swapChainFramebuffer : swapChainFramebuffers)
-		{
-			vkDestroyFramebuffer(device, swapChainFramebuffer, nullptr);
-		}
-		vkDestroyPipeline(device, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-		vkDestroyRenderPass(device, renderPass, nullptr);
-
-		for (auto& swapChainImageView : swapChainImageViews)
-		{
-			vkDestroyImageView(device, swapChainImageView, nullptr);
-		}
-
-		vkDestroySwapchainKHR(device, swapChain, nullptr);
-		vkDestroyDevice(device, nullptr);
-
-		if (enableValidationLayers)
-		{
-			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-		}
-
-		vkDestroySurfaceKHR(instance, surface, nullptr);
-
-		// 所有的Vulkan资源都需要在DestroyInstance前清理
-		vkDestroyInstance(instance, nullptr);
-
-		glfwDestroyWindow(window);
-		glfwTerminate();
 	}
 
 	void createInstance()
@@ -375,8 +376,8 @@ private:
 		VkPresentModeKHR presentMode = chooseSwapPresentMode(details.presentModes);
 		VkExtent2D extent = chooseSwapExtent(details.capabilities);
 
-		swapChainImageFormat = surfaceFormat.format;
-		swapChainExtent = extent;
+		swapchainImageFormat = surfaceFormat.format;
+		swapchainExtent = extent;
 
 		// +1 to avoid wating for another image to render to
 		uint32_t imageCount = details.capabilities.minImageCount + 1;
@@ -418,27 +419,27 @@ private:
 		createInfo.clipped = VK_TRUE;
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create swap chain!");
 		}
 
-		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-		swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
+		swapchainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
 	}
 
 	void createImageViews()
 	{
-		swapChainImageViews.resize(swapChainImages.size());
+		swapchainImageViews.resize(swapchainImages.size());
 
-		for (size_t i = 0; i < swapChainImages.size(); ++i)
+		for (size_t i = 0; i < swapchainImages.size(); ++i)
 		{
 			VkImageViewCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = swapChainImages[i];
+			createInfo.image = swapchainImages[i];
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = swapChainImageFormat;
+			createInfo.format = swapchainImageFormat;
 			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -450,7 +451,7 @@ private:
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
 
-			if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+			if (vkCreateImageView(device, &createInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create image views!");
 			}
@@ -462,7 +463,7 @@ private:
 		// 一个RenderPass可以由多个Subpass组成
 		// 前一个Subpass的输出即为后一个Subpass的输入
 		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = swapChainImageFormat;
+		colorAttachment.format = swapchainImageFormat;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -547,14 +548,14 @@ private:
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(swapChainExtent.width);
-		viewport.height = static_cast<float>(swapChainExtent.height);
+		viewport.width = static_cast<float>(swapchainExtent.width);
+		viewport.height = static_cast<float>(swapchainExtent.height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = swapChainExtent;
+		scissor.extent = swapchainExtent;
 
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -673,22 +674,22 @@ private:
 
 	void createFramebuffers()
 	{
-		swapChainFramebuffers.resize(swapChainImageViews.size());
+		swapchainFramebuffers.resize(swapchainImageViews.size());
 
-		for (size_t i = 0; i < swapChainImageViews.size(); ++i)
+		for (size_t i = 0; i < swapchainImageViews.size(); ++i)
 		{
-			VkImageView attachments[] = { swapChainImageViews[i] };
+			VkImageView attachments[] = { swapchainImageViews[i] };
 
 			VkFramebufferCreateInfo framebufferInfo{};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferInfo.renderPass = renderPass;
 			framebufferInfo.attachmentCount = 1;
 			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = swapChainExtent.width;
-			framebufferInfo.height = swapChainExtent.height;
+			framebufferInfo.width = swapchainExtent.width;
+			framebufferInfo.height = swapchainExtent.height;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) 
+			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapchainFramebuffers[i]) != VK_SUCCESS) 
 			{
 				throw std::runtime_error("failed to create framebuffer!");
 			}
@@ -712,7 +713,7 @@ private:
 
 	void createCommandBuffers()
 	{
-		commandBuffers.resize(swapChainFramebuffers.size());
+		commandBuffers.resize(swapchainFramebuffers.size());
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -740,9 +741,9 @@ private:
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassInfo.renderPass = renderPass;
-			renderPassInfo.framebuffer = swapChainFramebuffers[i];
+			renderPassInfo.framebuffer = swapchainFramebuffers[i];
 			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = swapChainExtent;
+			renderPassInfo.renderArea.extent = swapchainExtent;
 
 			VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 			renderPassInfo.clearValueCount = 1;
@@ -779,7 +780,7 @@ private:
 		// 将fence的初始状态设为SIGNALED，否则第一帧会永远在等待fence切换为SIGNALED状态
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		imagesInFlight.resize(swapChainImages.size(), VK_NULL_HANDLE);
+		imagesInFlight.resize(swapchainImages.size(), VK_NULL_HANDLE);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
@@ -819,17 +820,17 @@ private:
 
 		bool extensionsSupported = checkDeviceExtensionSupport(device);
 
-		bool swapChainAdequate = false;
+		bool swapchainAdequate = false;
 		if (extensionsSupported)
 		{
 			SwapChainSupportDetails details = querySwapChainSupport(device);
-			swapChainAdequate = details.isComplete();
+			swapchainAdequate = details.isComplete();
 		}
 
 		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
 			deviceFeatures.geometryShader &&
 			indices.isComplete() && 
-			extensionsSupported && swapChainAdequate;
+			extensionsSupported && swapchainAdequate;
 	}
 
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device)
@@ -1046,12 +1047,12 @@ private:
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;
 
-	VkSwapchainKHR swapChain;
-	std::vector<VkImage> swapChainImages;
-	std::vector<VkImageView> swapChainImageViews;
-	std::vector<VkFramebuffer> swapChainFramebuffers;
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
+	VkSwapchainKHR swapchain;
+	std::vector<VkImage> swapchainImages;
+	std::vector<VkImageView> swapchainImageViews;
+	std::vector<VkFramebuffer> swapchainFramebuffers;
+	VkFormat swapchainImageFormat;
+	VkExtent2D swapchainExtent;
 
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
