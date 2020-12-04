@@ -205,6 +205,7 @@ private:
 		// 检测是否要重建交换链
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || bFramebufferResized)
 		{
+			bFramebufferResized = false;
 			recreateSwapchain();
 		}
 		else if (result != VK_SUCCESS)
