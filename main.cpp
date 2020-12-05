@@ -5,11 +5,13 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdlib>
+#include <cstdio>
 #include <vector>
 #include <set>
 #include <algorithm>
 #include <string>
 #include <optional>
+#include <chrono>
 
 // 由于CreateDebugUtilsMessengerEXT和DestroyDebugUtilsMessengerEXT函数属于扩展函数，因此需要手动查找和加载
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -98,10 +100,21 @@ private:
 
 	void mainLoop()
 	{
+		std::chrono::steady_clock::time_point beginTime = std::chrono::steady_clock::now();
+
 		while (!glfwWindowShouldClose(window))
 		{
 			glfwPollEvents();
 			drawFrame();
+
+			std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
+			float deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - beginTime).count() * 1e-9);
+
+			char title[100];
+			snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / deltaTime));
+			glfwSetWindowTitle(window, title);
+
+			beginTime = std::chrono::steady_clock::now();
 		}
 
 		vkDeviceWaitIdle(device);
@@ -226,7 +239,7 @@ private:
 
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName = "Vulkan App";
+		appInfo.pApplicationName = "Bamboo Engine";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "Bamboo Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
