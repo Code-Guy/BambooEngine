@@ -21,6 +21,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#include <boost/format.hpp>
+#include <boost/filesystem.hpp>
+
 // 由于CreateDebugUtilsMessengerEXT和DestroyDebugUtilsMessengerEXT函数属于扩展函数，因此需要手动查找和加载
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -144,6 +151,7 @@ private:
 		createCommandPool();
 		createDepthResources();
 		createFramebuffers();
+		loadModel();
 		createTextureImage();
 		createTextureImageView();
 		createTextureSampler();
@@ -914,7 +922,7 @@ private:
 	{
 		// 使用图片库加载图片
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load("asset/texture/statue.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 		if (!pixels)
@@ -1401,7 +1409,7 @@ private:
 
 		UniformBufferObject ubo{};
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / static_cast<float>(swapchainExtent.height), 0.1f, 100.0f);
 		ubo.proj[1][1] *= -1; // glm主要是为OpenGL设计的，OpenGL和Vulkan的坐标系Y轴朝向相反，因此这里要乘以-1
 
@@ -1773,6 +1781,68 @@ private:
 		return indices;
 	}
 
+	void loadModel()
+	{
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(modelPath.c_str(),
+			aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
+
+		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+		{
+			throw std::runtime_error("failed to load model!");
+		}
+
+		processNode(scene->mRootNode, scene);
+	}
+
+	void processNode(aiNode* node, const aiScene* scene)
+	{
+		for (uint32_t i = 0; i < node->mNumMeshes; ++i)
+		{
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			processMesh(mesh, scene);
+		}
+
+		for (uint32_t i = 0; i < node->mNumChildren; ++i)
+		{
+			processNode(node->mChildren[i], scene);
+		}
+	}
+
+	void processMesh(aiMesh* mesh, const aiScene* scene)
+	{
+		// vertices
+		vertices.resize(mesh->mNumVertices);
+		for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
+		{
+			vertices[i].pos = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+			vertices[i].texCoord = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+		}
+
+		// indices
+		for (uint32_t i = 0; i < mesh->mNumFaces; ++i)
+		{
+			const aiFace& face = mesh->mFaces[i];
+			for (uint32_t j = 0; j < face.mNumIndices; ++j)
+			{
+				indices.push_back(face.mIndices[j]);
+			}
+		}
+
+		// materials
+		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		boost::filesystem::path modelParentPath = boost::filesystem::path(modelPath).parent_path();
+
+		// 1.diffuse maps
+		for (uint32_t i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); ++i)
+		{
+			aiString aiStr;
+			material->GetTexture(aiTextureType_DIFFUSE, i, &aiStr);
+			boost::filesystem::path boostPath(aiStr.C_Str());
+			texturePath = (modelParentPath / boost::filesystem::path("texture") / boostPath.filename()).string();
+		}
+	}
+
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -1889,24 +1959,10 @@ private:
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-	const std::vector<Vertex> vertices = 
-	{
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}},
-
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-		{{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}}
-	};
-
-	const std::vector<uint16_t> indices =
-	{
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4,
-	};
+	std::vector<Vertex> vertices;
+	std::vector<uint16_t> indices;
+	std::string modelPath = "asset/model/dinosaur/dinosaur.fbx";
+	std::string texturePath;
 
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
