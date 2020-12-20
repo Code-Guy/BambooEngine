@@ -204,8 +204,6 @@ private:
 		vmaDestroyBuffer(m_vmaAllocator, m_indexBuffer, m_indexBufferAllocation);
 		vmaDestroyBuffer(m_vmaAllocator, m_vertexBuffer, m_vertexBufferAllocation);
 
-		vmaDestroyAllocator(m_vmaAllocator);
-
 		vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 
@@ -217,6 +215,7 @@ private:
 		}
 
 		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+		vmaDestroyAllocator(m_vmaAllocator);
 		vkDestroyDevice(m_device, nullptr);
 
 		if (m_enableValidationLayers)
