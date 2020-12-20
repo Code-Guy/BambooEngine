@@ -504,6 +504,7 @@ private:
 	{
 		vkDestroyImageView(m_device, m_msaaImageView, nullptr);
 		vkDestroyImageView(m_device, m_depthImageView, nullptr);
+		vmaDestroyImage(m_vmaAllocator, m_msaaImage, m_msaaImageAllocation);
 		vmaDestroyImage(m_vmaAllocator, m_depthImage, m_depthImageAllocation);
 
 		for (size_t i = 0; i < m_swapchainImages.size(); ++i)
@@ -522,7 +523,6 @@ private:
 		}
 
 		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-
 
 		for (size_t i = 0; i < m_swapchainImages.size(); ++i)
 		{
