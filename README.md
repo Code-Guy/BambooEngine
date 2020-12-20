@@ -10,6 +10,7 @@ A lightweight game engine implemented with C++ and Vulkan.
 - Assimp
 - stb_image
 - FMOD
+- Bullet
 
 ## Notes
 - Vulkan SDK should be installed first to compile shaders
