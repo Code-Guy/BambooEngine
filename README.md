@@ -4,6 +4,7 @@ A lightweight game engine implemented with C++ and Vulkan.
 
 ## Dependencies
 - Vulkan SDK
+- Vulkan Memory Allocator
 - GLM
 - GLFW
 - Boost
