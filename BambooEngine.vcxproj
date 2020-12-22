@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -137,7 +137,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -153,7 +153,27 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="core\engine.cpp" />
+    <ClCompile Include="core\main.cpp" />
+    <ClCompile Include="entity\entity_factory.cpp" />
+    <ClCompile Include="io\asset_loader.cpp" />
+    <ClCompile Include="rendering\graphics_backend.cpp" />
+    <ClCompile Include="rendering\renderer.cpp" />
+    <ClCompile Include="rendering\batch_resource.h" />
+    <ClCompile Include="rendering\resource_factory.cpp" />
+    <ClCompile Include="rendering\resource_factory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="component\material.h" />
+    <ClInclude Include="component\mesh_component.h" />
+    <ClInclude Include="component\transform_component.h" />
+    <ClInclude Include="core\engine.h" />
+    <ClInclude Include="entity\entity_factory.h" />
+    <ClInclude Include="entity\skinned_mesh_entity.h" />
+    <ClInclude Include="entity\static_mesh_entity.h" />
+    <ClInclude Include="io\asset_loader.h" />
+    <ClInclude Include="rendering\graphics_backend.h" />
+    <ClInclude Include="rendering\renderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

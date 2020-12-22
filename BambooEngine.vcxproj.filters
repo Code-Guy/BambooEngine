@@ -1,6 +1,84 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="core\engine.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\graphics_backend.cpp">
+      <Filter>rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\renderer.cpp">
+      <Filter>rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="io\asset_loader.cpp">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="core\main.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\batch_resource.h">
+      <Filter>rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="entity\entity_factory.cpp">
+      <Filter>entity</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\resource_factory.h">
+      <Filter>rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\resource_factory.cpp">
+      <Filter>rendering</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="core">
+      <UniqueIdentifier>{83cff25d-64f9-4946-bb0d-2c81ef85ba2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="entity">
+      <UniqueIdentifier>{638ce8e6-b7cf-4c5f-b164-c16ceef0883c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rendering">
+      <UniqueIdentifier>{175ead01-7144-4b95-84a6-c367a94e8c72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system">
+      <UniqueIdentifier>{b6625577-3470-4476-811a-c0e87dfa962e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="component">
+      <UniqueIdentifier>{3ed5ebc4-9181-4013-b04e-f56a83d0ef60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="io">
+      <UniqueIdentifier>{17fcbc64-f73e-4bf1-8bed-ce950e1c6671}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="core\engine.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering\graphics_backend.h">
+      <Filter>rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering\renderer.h">
+      <Filter>rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="io\asset_loader.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="component\material.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\mesh_component.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\transform_component.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\skinned_mesh_entity.h">
+      <Filter>entity</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\static_mesh_entity.h">
+      <Filter>entity</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\entity_factory.h">
+      <Filter>entity</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
