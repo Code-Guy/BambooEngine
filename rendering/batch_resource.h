@@ -23,20 +23,19 @@ struct VmaImage
 {
 	VkImage image;
 	VmaAllocation allocation;
+	uint32_t mipLevels;
 };
 
 struct VmaImageView
 {
-	VkImage image;
-	VmaAllocation allocation;
-	VkImageView imageView;
+	VmaImage vmaImage;
+	VkImageView view;
 };
 
 struct VmaImageViewSampler
 {
-	VkImage image;
-	VmaAllocation allocation;
-	VkImageView imageView;
+	VmaImage vmaImage;
+	VkImageView view;
 	VkSampler sampler;
 };
 
@@ -44,7 +43,8 @@ struct BatchResource
 {
 	VmaBuffer vertexBuffer;
 	VmaBuffer indexBuffer;
-	VmaImageViewSampler textureImageViewSampler;
+	uint32_t indiceSize;
+	VmaImageViewSampler baseIVS;
 
 	std::vector<VmaBuffer> uniformBuffers;
 	std::vector<VkDescriptorSet> descriptorSets;

@@ -33,7 +33,10 @@ private:
 	void createSyncObjects();
 
 	void recreateSwapchain();
+	void createSwapchainBatchResource();
 	void cleanupSwapchain();
+	void cleanupSwapchainBatchResource();
+	void cleanupBatchResource();
 
 	void updateUniformBuffer(uint32_t imageIndex);
 
@@ -63,16 +66,11 @@ private:
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline;
 
+	VmaImageView m_depthImageView;
+	VmaImageView m_msaaImageView;
+
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;
-
-	VkImage m_depthImage;
-	VmaAllocation m_depthImageAllocation;
-	VkImageView m_depthImageView;
-
-	VkImage m_msaaImage;
-	VmaAllocation m_msaaImageAllocation;
-	VkImageView m_msaaImageView;
 
 	const size_t MAX_FRAMES_IN_FLIGHT = 2;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
@@ -80,4 +78,6 @@ private:
 	std::vector<VkFence> m_inFlightFences;
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame = 0;
+
+	std::vector<BatchResource> batchResources;
 };

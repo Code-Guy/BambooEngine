@@ -4,7 +4,7 @@
 void Renderer::init(GraphicsBackend* graphicBackend)
 {
 	m_backend = graphicBackend;
-	
+
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
@@ -15,6 +15,7 @@ void Renderer::init(GraphicsBackend* graphicBackend)
 	createDepthResources();
 	createFramebuffers();
 	createDescriptorPool();
+	createSwapchainBatchResource();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -104,16 +105,9 @@ void Renderer::render()
 void Renderer::destroy()
 {
 	cleanupSwapchain();
+	cleanupBatchResource();
 
 	vkDestroyDescriptorSetLayout(m_backend->getDevice(), m_descriptorSetLayout, nullptr);
-
-	//vkDestroySampler(m_backend->getDevice(), m_textureSampler, nullptr);
-	//vkDestroyImageView(m_backend->getDevice(), m_textureImageView, nullptr);
-	//vmaDestroyImage(m_backend->getAllocator(), m_textureImage, m_textureImageAllocation);
-
-	//vmaDestroyBuffer(m_backend->getAllocator(), m_indexBuffer, m_indexBufferAllocation);
-	//vmaDestroyBuffer(m_backend->getAllocator(), m_vertexBuffer, m_vertexBufferAllocation);
-
 	vkDestroyPipeline(m_backend->getDevice(), m_graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(m_backend->getDevice(), m_pipelineLayout, nullptr);
 
@@ -194,7 +188,7 @@ void Renderer::createImageViews()
 
 	for (size_t i = 0; i < m_swapchainImages.size(); ++i)
 	{
-		m_swapchainImageViews[i] = createImageView(m_swapchainImages[i], m_swapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+		m_swapchainImageViews[i] = ResourceFactory::getInstance().createImageView(m_swapchainImages[i], m_swapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	}
 }
 
@@ -317,8 +311,8 @@ void Renderer::createGraphicsPipeline()
 	AssetLoader::getInstance().loadBinary("asset/shader/simple_triangle_vert.spv", vertShaderCode);
 	AssetLoader::getInstance().loadBinary("asset/shader/simple_triangle_frag.spv", fragShaderCode);
 
-	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+	VkShaderModule vertShaderModule = ResourceFactory::getInstance().createShaderModule(vertShaderCode);
+	VkShaderModule fragShaderModule = ResourceFactory::getInstance().createShaderModule(fragShaderCode);
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -528,19 +522,19 @@ void Renderer::createMsaaResources()
 {
 	VkFormat msaaFormat = m_swapchainImageFormat;
 
-	createImage(m_swapchainExtent.width, m_swapchainExtent.height, 1, m_backend->getMsaaSamples(), msaaFormat,
+	ResourceFactory::getInstance().createImage(m_swapchainExtent.width, m_swapchainExtent.height, 1, m_backend->getMsaaSamples(), msaaFormat,
 		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		VMA_MEMORY_USAGE_GPU_ONLY, m_msaaImage, m_msaaImageAllocation);
-	m_msaaImageView = createImageView(m_msaaImage, msaaFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+		VMA_MEMORY_USAGE_GPU_ONLY, m_msaaImageView.vmaImage);
+	m_msaaImageView.view = ResourceFactory::getInstance().createImageView(m_msaaImageView.vmaImage.image, msaaFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
 void Renderer::createDepthResources()
 {
-	createImage(m_swapchainExtent.width, m_swapchainExtent.height, 1, m_backend->getMsaaSamples(), m_depthFormat, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY, m_depthImage, m_depthImageAllocation);
-	m_depthImageView = createImageView(m_depthImage, m_depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+	ResourceFactory::getInstance().createImage(m_swapchainExtent.width, m_swapchainExtent.height, 1, m_backend->getMsaaSamples(), m_depthFormat, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY, m_depthImageView.vmaImage);
+	m_depthImageView.view = ResourceFactory::getInstance().createImageView(m_depthImageView.vmaImage.image, m_depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
-	transitionImageLayout(m_depthImage, m_depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+	ResourceFactory::getInstance().transitionImageLayout(m_depthImageView.vmaImage.image, m_depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 }
 
 void Renderer::createFramebuffers()
@@ -549,7 +543,7 @@ void Renderer::createFramebuffers()
 
 	for (size_t i = 0; i < m_swapchainImageViews.size(); ++i)
 	{
-		std::vector<VkImageView> attachments = { m_msaaImageView, m_depthImageView, m_swapchainImageViews[i] };
+		std::vector<VkImageView> attachments = { m_msaaImageView.view, m_depthImageView.view, m_swapchainImageViews[i] };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -630,14 +624,18 @@ void Renderer::createCommandBuffers()
 		vkCmdSetViewport(m_commandBuffers[i], 0, 1, &viewport);
 		vkCmdSetScissor(m_commandBuffers[i], 0, 1, &scissor);
 
-		VkBuffer vertexBuffers[] = { m_vertexBuffer };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(m_commandBuffers[i], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(m_commandBuffers[i], m_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		for (const BatchResource& batchResource : batchResources)
+		{
+			VkBuffer vertexBuffers[] = { batchResource.vertexBuffer.buffer };
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(m_commandBuffers[i], 0, 1, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(m_commandBuffers[i], batchResource.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[i], 0, nullptr);
+			vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &batchResource.descriptorSets[i], 0, nullptr);
 
-		vkCmdDrawIndexed(m_commandBuffers[i], static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(m_commandBuffers[i], batchResource.indiceSize, 1, 0, 0, 0);
+		}
+
 		vkCmdEndRenderPass(m_commandBuffers[i]);
 
 		if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS)
@@ -702,18 +700,26 @@ void Renderer::recreateSwapchain()
 	createMsaaResources();
 	createDepthResources();
 	createFramebuffers();
-	//createUniformBuffers();
 	createDescriptorPool();
-	//createDescriptorSets();
+	createSwapchainBatchResource();
 	createCommandBuffers();
+}
+
+void Renderer::createSwapchainBatchResource()
+{
+	for (BatchResource& batchResource : batchResources)
+	{
+		ResourceFactory::getInstance().createUniformBuffers(m_swapchainImages.size(), batchResource);
+		ResourceFactory::getInstance().createDescriptorSets(m_swapchainImages.size(), m_descriptorPool, m_descriptorSetLayout, batchResource);
+	}
 }
 
 void Renderer::cleanupSwapchain()
 {
-	vkDestroyImageView(m_backend->getDevice(), m_msaaImageView, nullptr);
-	vkDestroyImageView(m_backend->getDevice(), m_depthImageView, nullptr);
-	vmaDestroyImage(m_backend->getAllocator(), m_msaaImage, m_msaaImageAllocation);
-	vmaDestroyImage(m_backend->getAllocator(), m_depthImage, m_depthImageAllocation);
+	vkDestroyImageView(m_backend->getDevice(), m_msaaImageView.view, nullptr);
+	vkDestroyImageView(m_backend->getDevice(), m_depthImageView.view, nullptr);
+	vmaDestroyImage(m_backend->getAllocator(), m_msaaImageView.vmaImage.image, m_msaaImageView.vmaImage.allocation);
+	vmaDestroyImage(m_backend->getAllocator(), m_depthImageView.vmaImage.image, m_depthImageView.vmaImage.allocation);
 
 	for (size_t i = 0; i < m_swapchainImages.size(); ++i)
 	{
@@ -732,11 +738,32 @@ void Renderer::cleanupSwapchain()
 
 	vkDestroySwapchainKHR(m_backend->getDevice(), m_swapchain, nullptr);
 
-	for (size_t i = 0; i < m_swapchainImages.size(); ++i)
-	{
-		vmaDestroyBuffer(m_backend->getAllocator(), m_uniformBuffers[i], m_uniformBufferAllocations[i]);
-	}
+	cleanupSwapchainBatchResource();
 	vkDestroyDescriptorPool(m_backend->getDevice(), m_descriptorPool, nullptr);
+}
+
+void Renderer::cleanupSwapchainBatchResource()
+{
+	for (const BatchResource& batchResource : batchResources)
+	{
+		for (size_t i = 0; i < m_swapchainImages.size(); ++i)
+		{
+			vmaDestroyBuffer(m_backend->getAllocator(), batchResource.uniformBuffers[i].buffer, batchResource.uniformBuffers[i].allocation);
+		}
+	}
+}
+
+void Renderer::cleanupBatchResource()
+{
+	for (const BatchResource& batchResource : batchResources)
+	{
+		vkDestroySampler(m_backend->getDevice(), batchResource.baseIVS.sampler, nullptr);
+		vkDestroyImageView(m_backend->getDevice(), batchResource.baseIVS.view, nullptr);
+		vmaDestroyImage(m_backend->getAllocator(), batchResource.baseIVS.vmaImage.image, batchResource.baseIVS.vmaImage.allocation);
+
+		vmaDestroyBuffer(m_backend->getAllocator(), batchResource.indexBuffer.buffer, batchResource.indexBuffer.allocation);
+		vmaDestroyBuffer(m_backend->getAllocator(), batchResource.vertexBuffer.buffer, batchResource.vertexBuffer.allocation);
+	}
 }
 
 void Renderer::updateUniformBuffer(uint32_t imageIndex)
@@ -752,10 +779,14 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchainExtent.width / static_cast<float>(m_swapchainExtent.height), 0.1f, 100.0f);
 	ubo.proj[1][1] *= -1; // glm主要是为OpenGL设计的，OpenGL和Vulkan的坐标系Y轴朝向相反，因此这里要乘以-1
 
-	void* data;
-	vmaMapMemory(m_backend->getAllocator(), m_uniformBufferAllocations[imageIndex], &data);
-	memcpy(data, &ubo, sizeof(ubo));
-	vmaUnmapMemory(m_backend->getAllocator(), m_uniformBufferAllocations[imageIndex]);
+	for (const BatchResource& batchResource : batchResources)
+	{
+		void* data;
+		VmaAllocation uniformBufferAllocation = batchResource.uniformBuffers[imageIndex].allocation;
+		vmaMapMemory(m_backend->getAllocator(), uniformBufferAllocation, &data);
+		memcpy(data, &ubo, sizeof(ubo));
+		vmaUnmapMemory(m_backend->getAllocator(), uniformBufferAllocation);
+	}
 }
 
 VkSurfaceFormatKHR Renderer::pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableSurfaceFormats)

@@ -1,9 +1,19 @@
 #pragma once
 
-#include "rendering/batch_resource.h"
+struct StaticMeshEntity
+{
 
-class ResourceFactory
+};
+
+struct SkinnedMeshEntity
+{
+
+};
+
+class EntityFactory
 {
 public:
+
+private:
 
 };

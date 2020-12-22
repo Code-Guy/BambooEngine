@@ -4,8 +4,10 @@
 void Engine::init()
 {
 	backend.init(1280, 720);
-	//renderer.init(&backend);
+	renderer.init(&backend);
 	
+	ResourceFactory::getInstance().init(&backend);
+
 	std::vector<StaticMeshComponent> staticMeshComponents;
 	AssetLoader::getInstance().loadModel("asset/model/dinosaur/dinosaur.fbx", staticMeshComponents);
 }
@@ -18,7 +20,7 @@ void Engine::run()
 	{
 		glfwPollEvents();
 
-		//renderer.render();
+		renderer.render();
 
 		std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
 		float deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - beginTime).count() * 1e-9);
@@ -35,6 +37,6 @@ void Engine::run()
 
 void Engine::destroy()
 {
-	//renderer.destroy();
+	renderer.destroy();
 	backend.destroy();
 }

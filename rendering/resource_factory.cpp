@@ -12,6 +12,19 @@ ResourceFactory& ResourceFactory::getInstance()
 void ResourceFactory::init(class GraphicsBackend* graphicsBackend)
 {
 	m_backend = graphicsBackend;
+	createInstantCommandPool();
+}
+
+void ResourceFactory::createBatchResource(const StaticMeshComponent& staticMeshComponent, BatchResource& batchResource)
+{
+	createVertexBuffer(staticMeshComponent.mesh.vertices, batchResource.vertexBuffer);
+	createIndexBuffer(staticMeshComponent.mesh.indices, batchResource.indexBuffer);
+
+	VmaImage& vmaImage = batchResource.baseIVS.vmaImage;
+	const Texture& baseTex = staticMeshComponent.material.baseTex;
+	createTextureImage(baseTex, vmaImage);
+	batchResource.baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
+	batchResource.baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
 }
 
 void ResourceFactory::createVertexBuffer(const std::vector<Vertex>& vertices, VmaBuffer& vertexBuffer)
@@ -77,6 +90,7 @@ void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image
 
 	VkDeviceSize imageSize = width * height * 4;
 	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+	image.mipLevels = mipLevels;
 
 	// 创建staging buffer
 	VmaBuffer stagingBuffer;
@@ -92,7 +106,7 @@ void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image
 	vmaUnmapMemory(m_backend->getAllocator(), stagingBuffer.allocation);
 
 	// 清理图片数据
-	stbi_image_free(texture.data);
+	//stbi_image_free(texture.data);
 
 	// 创建Image
 	createImage(static_cast<uint32_t>(width), static_cast<uint32_t>(height), mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -112,7 +126,7 @@ void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image
 	generateMipmaps(image.image, VK_FORMAT_R8G8B8A8_SRGB, width, height, mipLevels);
 }
 
-void ResourceFactory::createUniformBuffers(uint32_t swapchainSize, BatchResource& batchResource)
+void ResourceFactory::createUniformBuffers(size_t swapchainSize, BatchResource& batchResource)
 {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
@@ -126,7 +140,7 @@ void ResourceFactory::createUniformBuffers(uint32_t swapchainSize, BatchResource
 	}
 }
 
-void ResourceFactory::createDescriptorSets(uint32_t swapchainSize, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, BatchResource& batchResource)
+void ResourceFactory::createDescriptorSets(size_t swapchainSize, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, BatchResource& batchResource)
 {
 	std::vector<VkDescriptorSetLayout> layouts(swapchainSize, descriptorSetLayout);
 
@@ -152,8 +166,8 @@ void ResourceFactory::createDescriptorSets(uint32_t swapchainSize, VkDescriptorP
 
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = batchResource.textureImageViewSampler.imageView;
-		imageInfo.sampler = batchResource.textureImageViewSampler.sampler;
+		imageInfo.imageView = batchResource.baseIVS.view;
+		imageInfo.sampler = batchResource.baseIVS.sampler;
 
 		std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -197,6 +211,35 @@ VkImageView ResourceFactory::createImageView(VkImage image, VkFormat format, VkI
 	}
 
 	return imageView;
+}
+
+VkSampler ResourceFactory::createSampler(VkFilter minFilter, VkFilter maxFilter, VkSamplerAddressMode adressMode, uint32_t mipLevels)
+{
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = true;
+	samplerInfo.maxAnisotropy = m_backend->getPhysicalDeviceProperties().limits.maxSamplerAnisotropy;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = static_cast<float>(mipLevels);
+
+	VkSampler sampler;
+	if (vkCreateSampler(m_backend->getDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create texture sampler!");
+	}
+
+	return sampler;
 }
 
 void ResourceFactory::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,

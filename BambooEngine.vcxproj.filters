@@ -71,12 +71,6 @@
     <ClInclude Include="component\transform_component.h">
       <Filter>component</Filter>
     </ClInclude>
-    <ClInclude Include="entity\skinned_mesh_entity.h">
-      <Filter>entity</Filter>
-    </ClInclude>
-    <ClInclude Include="entity\static_mesh_entity.h">
-      <Filter>entity</Filter>
-    </ClInclude>
     <ClInclude Include="entity\entity_factory.h">
       <Filter>entity</Filter>
     </ClInclude>
