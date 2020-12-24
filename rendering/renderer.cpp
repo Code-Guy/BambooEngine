@@ -506,15 +506,15 @@ void Renderer::createDescriptorPool()
 {
 	std::vector<VkDescriptorPoolSize> poolSizes(2, VkDescriptorPoolSize{});
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size());
+	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 4);
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size());
+	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 4);
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());;
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size());
+	poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size() * 4);
 
 	if (vkCreateDescriptorPool(m_backend->getDevice(), &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
 	{
@@ -778,14 +778,24 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchainExtent.width / static_cast<float>(m_swapchainExtent.height), 0.1f, 100.0f);
 	ubo.proj[1][1] *= -1; // glm主要是为OpenGL设计的，OpenGL和Vulkan的坐标系Y轴朝向相反，因此这里要乘以-1
 
-	for (const BatchResource& batchResource : m_batchResources)
+	std::vector<glm::vec3> positions = {
+		glm::vec3(-4.0f, -4.0f, 0.0f),
+		glm::vec3(-4.0f, 4.0f, 0.0f),
+		glm::vec3(4.0f, -4.0f, 0.0f),
+		glm::vec3(4.0f, 4.0f, 0.0f)
+	};
+
+	for (size_t i = 0; i < m_batchResources.size(); ++i)
 	{
+		glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[i]);
+		ubo.model = glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
 		void* data;
+		const BatchResource& batchResource = m_batchResources[i];
 		VmaAllocation uniformBufferAllocation = batchResource.uniformBuffers[imageIndex].allocation;
 		vmaMapMemory(m_backend->getAllocator(), uniformBufferAllocation, &data);
 		memcpy(data, &ubo, sizeof(ubo));

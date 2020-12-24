@@ -43,7 +43,7 @@ void AssetLoader::loadModel(const std::string& filename, std::vector<StaticMeshC
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		throw std::runtime_error((boost::format("failed to load model£º%s") % filename.c_str()).str());
+		throw std::runtime_error((boost::format("failed to load model£º%s, error: %s") % filename.c_str() % importer.GetErrorString()).str());
 	}
 
 	processNode(scene->mRootNode, scene, filename, staticMeshComponents);

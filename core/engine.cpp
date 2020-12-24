@@ -14,8 +14,20 @@ void Engine::init()
 
 	// 加载模型资源，生成组件
 	std::vector<StaticMeshComponent> staticMeshComponents;
-	AssetLoader::getInstance().loadModel("asset/model/dinosaur/dinosaur.fbx", staticMeshComponents);
+	std::vector<std::string> modelNames = {
+		"asset/model/dinosaur/dinosaur.fbx",
+		"asset/model/armadillo/armadillo.fbx",
+		"asset/model/dragon/dragon.fbx",
+		"asset/model/ogre/ogre.fbx"
+	};
 
+	for (const std::string& modelName : modelNames)
+	{
+		std::vector<StaticMeshComponent> components;
+		AssetLoader::getInstance().loadModel(modelName, components);
+		staticMeshComponents.insert(staticMeshComponents.end(), components.begin(), components.end());
+	}
+	
 	// 通过组件生成渲染资源
 	std::vector<BatchResource> batchResources(staticMeshComponents.size());
 	for (size_t i = 0; i < staticMeshComponents.size(); ++i)
