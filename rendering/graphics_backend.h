@@ -50,12 +50,13 @@ public:
 	VkQueue getPresentQueue() { return m_presentQueue; }
 
 	const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() { return m_physicalDeviceProperties; }
-	const SwapChainSupportDetails& getSwapchainDetails() { return m_swapchainDetails; }
+	SwapChainSupportDetails getSwapChainSupport();
 	const QueueFamilyIndices& getQueueFamilyIndices() { return m_queueFamilyIndices; }
 
 	VkSampleCountFlagBits getMsaaSamples() { return m_msaaSamples; }
 
-	bool& getFramebufferResized() { return m_framebufferResized; }
+	bool getFramebufferResized() { return m_framebufferResized; }
+	void setFramebufferResized(bool bFlag) { m_framebufferResized = bFlag; }
 
 private:
 	void initWindow();
@@ -93,7 +94,6 @@ private:
 	VkQueue m_presentQueue;
 	
 	VkPhysicalDeviceProperties m_physicalDeviceProperties;
-	SwapChainSupportDetails m_swapchainDetails;
 	QueueFamilyIndices m_queueFamilyIndices;
 
 	VkSampleCountFlagBits m_msaaSamples;

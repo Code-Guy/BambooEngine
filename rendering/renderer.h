@@ -18,6 +18,8 @@ public:
 	void render();
 	void destroy();
 
+	void setBatchResources(std::vector<BatchResource> batchResources);
+
 private:
 	void createSwapChain();
 	void createImageViews();
@@ -43,6 +45,7 @@ private:
 	VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D pickSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 	VkFormat querySupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 	class GraphicsBackend* m_backend;
@@ -79,5 +82,5 @@ private:
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame = 0;
 
-	std::vector<BatchResource> batchResources;
+	std::vector<BatchResource> m_batchResources;
 };

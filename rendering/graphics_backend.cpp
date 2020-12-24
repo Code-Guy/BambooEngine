@@ -57,6 +57,11 @@ void GraphicsBackend::destroy()
 	glfwTerminate();
 }
 
+SwapChainSupportDetails GraphicsBackend::getSwapChainSupport()
+{
+	return querySwapChainSupport(m_physicalDevice);
+}
+
 void GraphicsBackend::initWindow()
 {
 	glfwInit();
@@ -174,7 +179,6 @@ void GraphicsBackend::pickPhysicalDevice()
 	// ª∫¥Êphysical deviceµƒ Ù–‘
 	vkGetPhysicalDeviceProperties(m_physicalDevice, &m_physicalDeviceProperties);
 	m_queueFamilyIndices = queryQueueFamilies(m_physicalDevice);
-	m_swapchainDetails = querySwapChainSupport(m_physicalDevice);
 	m_msaaSamples = queryMaxSampleCount();
 }
 

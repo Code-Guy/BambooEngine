@@ -15,13 +15,19 @@ void ResourceFactory::init(class GraphicsBackend* graphicsBackend)
 	createInstantCommandPool();
 }
 
+void ResourceFactory::destroy()
+{
+	vkDestroyCommandPool(m_backend->getDevice(), m_instantCommandPool, nullptr);
+}
+
 void ResourceFactory::createBatchResource(const StaticMeshComponent& staticMeshComponent, BatchResource& batchResource)
 {
 	createVertexBuffer(staticMeshComponent.mesh.vertices, batchResource.vertexBuffer);
-	createIndexBuffer(staticMeshComponent.mesh.indices, batchResource.indexBuffer);
+	createIndexBuffer(staticMeshComponent.mesh.indices, batchResource.indexBuffer, batchResource.indiceSize);
 
 	VmaImage& vmaImage = batchResource.baseIVS.vmaImage;
 	const Texture& baseTex = staticMeshComponent.material.baseTex;
+
 	createTextureImage(baseTex, vmaImage);
 	batchResource.baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
 	batchResource.baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
@@ -55,8 +61,9 @@ void ResourceFactory::createVertexBuffer(const std::vector<Vertex>& vertices, Vm
 	vmaDestroyBuffer(m_backend->getAllocator(), stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
-void ResourceFactory::createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer)
+void ResourceFactory::createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer, uint32_t& indiceSize)
 {
+	indiceSize = static_cast<uint32_t>(indices.size());
 	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
 	VmaBuffer stagingBuffer;

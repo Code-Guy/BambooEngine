@@ -15,7 +15,6 @@ void Renderer::init(GraphicsBackend* graphicBackend)
 	createDepthResources();
 	createFramebuffers();
 	createDescriptorPool();
-	createSwapchainBatchResource();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -88,10 +87,9 @@ void Renderer::render()
 	result = vkQueuePresentKHR(m_backend->getPresentQueue(), &presentInfo);
 
 	// 检测是否要重建交换链
-	bool& framebufferResized = m_backend->getFramebufferResized();
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_backend->getFramebufferResized())
 	{
-		framebufferResized = false;
+		m_backend->setFramebufferResized(false);
 		recreateSwapchain();
 	}
 	else if (result != VK_SUCCESS)
@@ -121,9 +119,15 @@ void Renderer::destroy()
 	vkDestroyCommandPool(m_backend->getDevice(), m_commandPool, nullptr);
 }
 
+void Renderer::setBatchResources(std::vector<BatchResource> batchResources)
+{
+	m_batchResources = batchResources;
+	recreateSwapchain();
+}
+
 void Renderer::createSwapChain()
 {
-	const SwapChainSupportDetails& details = m_backend->getSwapchainDetails();
+	SwapChainSupportDetails details = m_backend->getSwapChainSupport();
 
 	VkSurfaceFormatKHR surfaceFormat = pickSwapSurfaceFormat(details.formats);
 	VkPresentModeKHR presentMode = pickSwapPresentMode(details.presentModes);
@@ -624,7 +628,7 @@ void Renderer::createCommandBuffers()
 		vkCmdSetViewport(m_commandBuffers[i], 0, 1, &viewport);
 		vkCmdSetScissor(m_commandBuffers[i], 0, 1, &scissor);
 
-		for (const BatchResource& batchResource : batchResources)
+		for (const BatchResource& batchResource : m_batchResources)
 		{
 			VkBuffer vertexBuffers[] = { batchResource.vertexBuffer.buffer };
 			VkDeviceSize offsets[] = { 0 };
@@ -707,7 +711,7 @@ void Renderer::recreateSwapchain()
 
 void Renderer::createSwapchainBatchResource()
 {
-	for (BatchResource& batchResource : batchResources)
+	for (BatchResource& batchResource : m_batchResources)
 	{
 		ResourceFactory::getInstance().createUniformBuffers(m_swapchainImages.size(), batchResource);
 		ResourceFactory::getInstance().createDescriptorSets(m_swapchainImages.size(), m_descriptorPool, m_descriptorSetLayout, batchResource);
@@ -744,18 +748,18 @@ void Renderer::cleanupSwapchain()
 
 void Renderer::cleanupSwapchainBatchResource()
 {
-	for (const BatchResource& batchResource : batchResources)
+	for (const BatchResource& batchResource : m_batchResources)
 	{
-		for (size_t i = 0; i < m_swapchainImages.size(); ++i)
+		for (const VmaBuffer& uniformBuffer : batchResource.uniformBuffers)
 		{
-			vmaDestroyBuffer(m_backend->getAllocator(), batchResource.uniformBuffers[i].buffer, batchResource.uniformBuffers[i].allocation);
+			vmaDestroyBuffer(m_backend->getAllocator(), uniformBuffer.buffer, uniformBuffer.allocation);
 		}
 	}
 }
 
 void Renderer::cleanupBatchResource()
 {
-	for (const BatchResource& batchResource : batchResources)
+	for (const BatchResource& batchResource : m_batchResources)
 	{
 		vkDestroySampler(m_backend->getDevice(), batchResource.baseIVS.sampler, nullptr);
 		vkDestroyImageView(m_backend->getDevice(), batchResource.baseIVS.view, nullptr);
@@ -779,7 +783,7 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchainExtent.width / static_cast<float>(m_swapchainExtent.height), 0.1f, 100.0f);
 	ubo.proj[1][1] *= -1; // glm主要是为OpenGL设计的，OpenGL和Vulkan的坐标系Y轴朝向相反，因此这里要乘以-1
 
-	for (const BatchResource& batchResource : batchResources)
+	for (const BatchResource& batchResource : m_batchResources)
 	{
 		void* data;
 		VmaAllocation uniformBufferAllocation = batchResource.uniformBuffers[imageIndex].allocation;
@@ -834,6 +838,31 @@ VkExtent2D Renderer::pickSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities
 	actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
 	return actualExtent;
+}
+
+SwapChainSupportDetails Renderer::querySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+{
+	SwapChainSupportDetails details;
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+	if (formatCount != 0)
+	{
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+	}
+
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+	if (presentModeCount != 0)
+	{
+		details.presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
+	}
+
+	return details;
 }
 
 VkFormat Renderer::querySupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)

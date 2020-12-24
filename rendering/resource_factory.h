@@ -8,11 +8,12 @@ class ResourceFactory
 public:
 	static ResourceFactory& getInstance();
 	void init(class GraphicsBackend* graphicsBackend);
+	void destroy();
 
 	void createBatchResource(const StaticMeshComponent& staticMeshComponent, BatchResource& batchResource);
 
 	void createVertexBuffer(const std::vector<Vertex>& vertices, VmaBuffer& vertexBuffer);
-	void createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer);
+	void createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer, uint32_t& indiceSize);
 	void createTextureImage(const Texture& texture, VmaImage& image);
 
 	void createUniformBuffers(size_t swapchainSize, BatchResource& batchResource);
