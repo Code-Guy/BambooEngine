@@ -11,7 +11,10 @@ public:
 	void destroy();
 
 private:
-	GraphicsBackend backend;
-	Renderer renderer;
+	GraphicsBackend m_backend;
+	Renderer m_renderer;
+	class Camera* m_camera;
+
+	float m_deltaTime;
 };
 

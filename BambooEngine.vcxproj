@@ -155,7 +155,9 @@
   <ItemGroup>
     <ClCompile Include="core\engine.cpp" />
     <ClCompile Include="core\main.cpp" />
+    <ClCompile Include="entity\camera.cpp" />
     <ClCompile Include="entity\entity_factory.cpp" />
+    <ClCompile Include="input\input_manager.cpp" />
     <ClCompile Include="io\asset_loader.cpp" />
     <ClCompile Include="rendering\graphics_backend.cpp" />
     <ClCompile Include="rendering\renderer.cpp" />
@@ -168,7 +170,9 @@
     <ClInclude Include="component\mesh_component.h" />
     <ClInclude Include="component\transform_component.h" />
     <ClInclude Include="core\engine.h" />
+    <ClInclude Include="entity\camera.h" />
     <ClInclude Include="entity\entity_factory.h" />
+    <ClInclude Include="input\input_manager.h" />
     <ClInclude Include="io\asset_loader.h" />
     <ClInclude Include="rendering\graphics_backend.h" />
     <ClInclude Include="rendering\renderer.h" />

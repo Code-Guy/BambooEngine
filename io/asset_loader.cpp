@@ -83,6 +83,7 @@ void AssetLoader::processMesh(aiMesh* mesh, const aiScene* scene, const std::str
 	{
 		staticMeshComponent.mesh.vertices[i].position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
 		staticMeshComponent.mesh.vertices[i].texCoord = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+		staticMeshComponent.mesh.vertices[i].normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
 	}
 
 	// indices

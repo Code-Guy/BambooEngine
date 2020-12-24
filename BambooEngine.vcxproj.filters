@@ -28,6 +28,12 @@
     <ClCompile Include="rendering\resource_factory.cpp">
       <Filter>rendering</Filter>
     </ClCompile>
+    <ClCompile Include="input\input_manager.cpp">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="entity\camera.cpp">
+      <Filter>entity</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="core">
@@ -47,6 +53,9 @@
     </Filter>
     <Filter Include="io">
       <UniqueIdentifier>{17fcbc64-f73e-4bf1-8bed-ce950e1c6671}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="input">
+      <UniqueIdentifier>{4f798e6d-1bf4-495e-a7f5-eb212ee2ff8a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -72,6 +81,12 @@
       <Filter>component</Filter>
     </ClInclude>
     <ClInclude Include="entity\entity_factory.h">
+      <Filter>entity</Filter>
+    </ClInclude>
+    <ClInclude Include="input\input_manager.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\camera.h">
       <Filter>entity</Filter>
     </ClInclude>
   </ItemGroup>

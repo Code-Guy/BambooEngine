@@ -312,8 +312,8 @@ void Renderer::createGraphicsPipeline()
 {
 	// º”‘ÿshader binary code
 	std::vector<char> vertShaderCode, fragShaderCode;
-	AssetLoader::getInstance().loadBinary("asset/shader/simple_triangle_vert.spv", vertShaderCode);
-	AssetLoader::getInstance().loadBinary("asset/shader/simple_triangle_frag.spv", fragShaderCode);
+	AssetLoader::getInstance().loadBinary("asset/shader/bin/blinn_phong_vert.spv", vertShaderCode);
+	AssetLoader::getInstance().loadBinary("asset/shader/bin/blinn_phong_frag.spv", fragShaderCode);
 
 	VkShaderModule vertShaderModule = ResourceFactory::getInstance().createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = ResourceFactory::getInstance().createShaderModule(fragShaderCode);
@@ -345,7 +345,7 @@ void Renderer::createGraphicsPipeline()
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	// ∂•µ„ Ù–‘√Ë ˆ
-	std::vector<VkVertexInputAttributeDescription> attributeDescriptions(2, VkVertexInputAttributeDescription{});
+	std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3, VkVertexInputAttributeDescription{});
 
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
@@ -356,6 +356,11 @@ void Renderer::createGraphicsPipeline()
 	attributeDescriptions[1].location = 1;
 	attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
 	attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+
+	attributeDescriptions[2].binding = 0;
+	attributeDescriptions[2].location = 2;
+	attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[2].offset = offsetof(Vertex, normal);
 
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;

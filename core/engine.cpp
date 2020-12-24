@@ -1,16 +1,26 @@
 #include "engine.h"
 #include "io/asset_loader.h"
+#include "input/input_manager.h"
+#include "entity/camera.h"
 
 void Engine::init()
 {
 	// 初始化图形后端和渲染器
-	backend.init(1280, 720);
+	m_backend.init(1280, 720);
 
 	// 初始化渲染资源工厂
-	ResourceFactory::getInstance().init(&backend);
+	ResourceFactory::getInstance().init(&m_backend);
+
+	// 初始化输入管理器
+	InputManager::getInstance().init(m_backend.getWindow());
+
+	// 初始化摄像机
+	m_camera = new Camera(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 2.5f, 0.1f);
+	InputManager::getInstance().registerKeyPressed(std::bind(&Camera::onKeyPressed, m_camera, std::placeholders::_1));
+	InputManager::getInstance().registerMouseOffseted(std::bind(&Camera::onMouseOffseted, m_camera, std::placeholders::_1, std::placeholders::_2));
 
 	// 初始化渲染器
-	renderer.init(&backend);
+	m_renderer.init(&m_backend);
 
 	// 加载模型资源，生成组件
 	std::vector<StaticMeshComponent> staticMeshComponents;
@@ -36,35 +46,38 @@ void Engine::init()
 	}
 
 	// 设置渲染器渲染资源
-	renderer.setBatchResources(batchResources);
+	m_renderer.setBatchResources(batchResources);
 }
 
 void Engine::run()
 {
 	std::chrono::steady_clock::time_point beginTime = std::chrono::steady_clock::now();
 
-	while (!glfwWindowShouldClose(backend.getWindow()))
+	while (!glfwWindowShouldClose(m_backend.getWindow()))
 	{
 		glfwPollEvents();
 
-		renderer.render();
+		m_camera->tick(m_deltaTime);
+		m_renderer.render();
 
+		// 计算当前帧所花的时间，计算帧率
 		std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
-		float deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - beginTime).count() * 1e-9);
+		m_deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - beginTime).count() * 1e-9);
 
 		char title[100];
-		snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / deltaTime));
-		glfwSetWindowTitle(backend.getWindow(), title);
+		snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / m_deltaTime));
+		glfwSetWindowTitle(m_backend.getWindow(), title);
 
 		beginTime = std::chrono::steady_clock::now();
 	}
 
-	vkDeviceWaitIdle(backend.getDevice());
+	vkDeviceWaitIdle(m_backend.getDevice());
 }
 
 void Engine::destroy()
 {
-	renderer.destroy();
+	delete m_camera;
+	m_renderer.destroy();
 	ResourceFactory::getInstance().destroy();
-	backend.destroy();
+	m_backend.destroy();
 }
