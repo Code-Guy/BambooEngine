@@ -17,7 +17,6 @@ void Renderer::init(GraphicsBackend* graphicBackend, Camera* camera)
 	createDepthResources();
 	createFramebuffers();
 	createDescriptorPool();
-	createCommandBuffers();
 	createSyncObjects();
 }
 
@@ -49,7 +48,10 @@ void Renderer::render()
 	m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
 
 	// 更新Uniform Buffer
-	updateUniformBuffer(imageIndex);
+	//updateUniformBuffer(imageIndex);
+
+	// 每帧重新生成Command Buffer
+	createCommandBuffers();
 
 	// Submit command buffer
 	VkSubmitInfo submitInfo{};
@@ -459,8 +461,19 @@ void Renderer::createGraphicsPipeline()
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+	// Push constants
+	m_pushConstantRanges.resize(2, VkPushConstantRange{});
+	m_pushConstantRanges[0].offset = 0;
+	m_pushConstantRanges[0].size = sizeof(glm::mat4);
+	m_pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+	m_pushConstantRanges[1].offset = m_pushConstantRanges[0].size;
+	m_pushConstantRanges[1].size = sizeof(glm::vec4) * 2;
+	m_pushConstantRanges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.size());
+	pipelineLayoutInfo.pPushConstantRanges = m_pushConstantRanges.data();
 
 	if (vkCreatePipelineLayout(m_backend->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 	{
@@ -636,14 +649,17 @@ void Renderer::createCommandBuffers()
 		vkCmdSetViewport(m_commandBuffers[i], 0, 1, &viewport);
 		vkCmdSetScissor(m_commandBuffers[i], 0, 1, &scissor);
 
-		for (const BatchResource& batchResource : m_batchResources)
+		for (size_t j = 0; j < m_batchResources.size(); ++j)
 		{
+			const BatchResource& batchResource = m_batchResources[j];
+
 			VkBuffer vertexBuffers[] = { batchResource.vertexBuffer.buffer };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(m_commandBuffers[i], 0, 1, vertexBuffers, offsets);
 			vkCmdBindIndexBuffer(m_commandBuffers[i], batchResource.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &batchResource.descriptorSets[i], 0, nullptr);
+			updatePushConstants(m_commandBuffers[i], j);
 
 			vkCmdDrawIndexed(m_commandBuffers[i], batchResource.indiceSize, 1, 0, 0, 0);
 		}
@@ -714,7 +730,6 @@ void Renderer::recreateSwapchain()
 	createFramebuffers();
 	createDescriptorPool();
 	createSwapchainBatchResource();
-	createCommandBuffers();
 }
 
 void Renderer::createSwapchainBatchResource()
@@ -785,10 +800,6 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	UniformBufferObject ubo{};
-	ubo.view = m_camera->getViewMatrix();
-	ubo.proj = m_camera->getPerspectiveMatrix();
-
 	std::vector<glm::vec3> positions = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(-4.0f, -4.0f, 0.0f),
@@ -800,7 +811,11 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	for (size_t i = 0; i < m_batchResources.size(); ++i)
 	{
 		glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[i]);
-		ubo.model = i == 0 ? modelMat : glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		//ubo.model = i == 0 ? modelMat : glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		UniformBufferObject ubo{};
+		ubo.mvp = m_camera->getViewPerspectiveMatrix();
+		ubo.mvp *= modelMat;
 
 		void* data;
 		const BatchResource& batchResource = m_batchResources[i];
@@ -808,6 +823,35 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 		vmaMapMemory(m_backend->getAllocator(), uniformBufferAllocation, &data);
 		memcpy(data, &ubo, sizeof(ubo));
 		vmaUnmapMemory(m_backend->getAllocator(), uniformBufferAllocation);
+	}
+}
+
+void Renderer::updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIndex)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	std::vector<glm::vec3> positions = {
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(-4.0f, -4.0f, 0.0f),
+		glm::vec3(-4.0f, 4.0f, 0.0f),
+		glm::vec3(4.0f, -4.0f, 0.0f),
+		glm::vec3(4.0f, 4.0f, 0.0f)
+	};
+
+	PushConstantsObject pco{};
+	glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[batchIndex]);
+	pco.mvp = m_camera->getViewPerspectiveMatrix();
+	pco.mvp *= modelMat;
+
+	pco.cameraPosition = glm::vec4(m_camera->getPosition(), 1.0f);
+	pco.lightDirection = glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f);
+
+	for (const VkPushConstantRange& pushConstantRange : m_pushConstantRanges)
+	{
+		vkCmdPushConstants(commandBuffer, m_pipelineLayout, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, &pco);
 	}
 }
 

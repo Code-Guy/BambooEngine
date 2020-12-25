@@ -8,9 +8,14 @@
 
 struct UniformBufferObject
 {
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
+	alignas(16) glm::mat4 mvp;
+};
+
+struct PushConstantsObject
+{
+	alignas(16) glm::mat4 mvp;
+	alignas(16) glm::vec4 cameraPosition;
+	alignas(16) glm::vec4 lightDirection;
 };
 
 struct VmaBuffer

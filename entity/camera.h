@@ -16,6 +16,7 @@ public:
 
 	void tick(float deltaTime);
 
+	glm::vec3 getPosition();
 	glm::mat4 getViewMatrix();
 	glm::mat4 getPerspectiveMatrix();
 	glm::mat4 getViewPerspectiveMatrix();

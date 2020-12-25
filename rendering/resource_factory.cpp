@@ -165,18 +165,13 @@ void ResourceFactory::createDescriptorSets(size_t swapchainSize, VkDescriptorPoo
 
 	for (size_t i = 0; i < batchResource.descriptorSets.size(); ++i)
 	{
-		VkDescriptorBufferInfo bufferInfo{};
+		std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
 
+		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = batchResource.uniformBuffers[i].buffer;
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(UniformBufferObject);
 
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = batchResource.baseIVS.view;
-		imageInfo.sampler = batchResource.baseIVS.sampler;
-
-		std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = batchResource.descriptorSets[i];
 		descriptorWrites[0].dstBinding = 0;
@@ -184,6 +179,11 @@ void ResourceFactory::createDescriptorSets(size_t swapchainSize, VkDescriptorPoo
 		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		descriptorWrites[0].descriptorCount = 1;
 		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = batchResource.baseIVS.view;
+		imageInfo.sampler = batchResource.baseIVS.sampler;
 
 		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[1].dstSet = batchResource.descriptorSets[i];

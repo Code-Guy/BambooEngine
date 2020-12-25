@@ -41,6 +41,7 @@ private:
 	void cleanupBatchResource();
 
 	void updateUniformBuffer(uint32_t imageIndex);
+	void updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIndex);
 
 	VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -83,5 +84,6 @@ private:
 	size_t m_currentFrame = 0;
 
 	std::vector<BatchResource> m_batchResources;
+	std::vector<VkPushConstantRange> m_pushConstantRanges;
 	class Camera* m_camera;
 };

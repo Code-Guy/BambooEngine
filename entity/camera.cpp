@@ -58,6 +58,11 @@ void Camera::tick(float deltaTime)
 	}
 }
 
+glm::vec3 Camera::getPosition()
+{
+	return m_position;
+}
+
 glm::mat4 Camera::getViewMatrix()
 {
 	return glm::lookAt(m_position, m_position + m_forward, m_up);
