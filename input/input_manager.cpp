@@ -10,10 +10,9 @@ InputManager& InputManager::getInstance()
 void InputManager::init(GLFWwindow* window)
 {
 	m_window = window;
-	m_keyPressedHandle = 0;
-	m_mouseMovedHandle = 0;
-	lastMouseX = 0.0;
-	lastMouseY = 0.0;
+	m_inputEventHandle = 0;
+	m_lastMouseX = 0.0;
+	m_lastMouseY = 0.0;
 
 	glfwSetKeyCallback(window, onKey);
 	glfwSetCursorPosCallback(window, onCursorPos);
@@ -22,51 +21,94 @@ void InputManager::init(GLFWwindow* window)
 
 uint32_t InputManager::registerKeyPressed(std::function<void(int)> onKeyPressed)
 {
-	m_keyPressedMap[m_keyPressedHandle] = onKeyPressed;
-	return m_keyPressedHandle++;
+	m_keyPressedMap[m_inputEventHandle] = onKeyPressed;
+	return m_inputEventHandle++;
+}
+
+uint32_t InputManager::registerKeyReleased(std::function<void(int)> onKeyReleased)
+{
+	m_keyReleasedMap[m_inputEventHandle] = onKeyReleased;
+	return m_inputEventHandle++;
 }
 
 uint32_t InputManager::registerMouseMoved(std::function<void(float, float)> onMouseMoved)
 {
-	m_mouseMovedMap[m_mouseMovedHandle] = onMouseMoved;
-	return m_mouseMovedHandle++;
+	m_mouseMovedMap[m_inputEventHandle] = onMouseMoved;
+	return m_inputEventHandle++;
 }
 
 uint32_t InputManager::registerMouseOffseted(std::function<void(float, float)> onMouseOffseted)
 {
-	m_mouseOffsetedMap[m_mouseOffsetedHandle] = onMouseOffseted;
-	return m_mouseOffsetedHandle++;
+	m_mouseOffsetedMap[m_inputEventHandle] = onMouseOffseted;
+	return m_inputEventHandle++;
 }
 
-void InputManager::unregisterKeyPressed(uint32_t handle)
+uint32_t InputManager::registerMousePressed(std::function<void(int)> onMousePressed)
+{
+	m_mousePressedMap[m_inputEventHandle] = onMousePressed;
+	return m_inputEventHandle++;
+}
+
+uint32_t InputManager::registerMouseReleased(std::function<void(int)> onMouseReleased)
+{
+	m_mouseReleasedMap[m_inputEventHandle] = onMouseReleased;
+	return m_inputEventHandle++;
+}
+
+void InputManager::unregisterInputEvent(uint8_t handle)
 {
 	if (m_keyPressedMap.find(handle) != m_keyPressedMap.end())
 	{
 		m_keyPressedMap.erase(handle);
+		return;
 	}
-}
 
-void InputManager::unregisterMouseMoved(uint32_t handle)
-{
+	if (m_keyReleasedMap.find(handle) != m_keyReleasedMap.end())
+	{
+		m_keyReleasedMap.erase(handle);
+		return;
+	}
+
 	if (m_mouseMovedMap.find(handle) != m_mouseMovedMap.end())
 	{
 		m_mouseMovedMap.erase(handle);
+		return;
 	}
-}
 
-void InputManager::unregisterMouseOffseted(uint32_t handle)
-{
 	if (m_mouseOffsetedMap.find(handle) != m_mouseOffsetedMap.end())
 	{
 		m_mouseOffsetedMap.erase(handle);
+		return;
+	}
+
+	if (m_mousePressedMap.find(handle) != m_mousePressedMap.end())
+	{
+		m_mouseOffsetedMap.erase(handle);
+		return;
+	}
+
+	if (m_mouseReleasedMap.find(handle) != m_mouseReleasedMap.end())
+	{
+		m_mouseOffsetedMap.erase(handle);
+		return;
 	}
 }
 
 void InputManager::onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	for (const auto& iter : InputManager::getInstance().m_keyPressedMap)
+	if (action == GLFW_PRESS)
 	{
-		iter.second(key);
+		for (const auto& iter : InputManager::getInstance().m_keyPressedMap)
+		{
+			iter.second(key);
+		}
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		for (const auto& iter : InputManager::getInstance().m_keyReleasedMap)
+		{
+			iter.second(key);
+		}
 	}
 }
 
@@ -81,16 +123,16 @@ void InputManager::onCursorPos(GLFWwindow* window, double xpos, double ypos)
 
 	double xoffset = 0.0;
 	double yoffset = 0.0;
-	if (input.lastMouseX != 0.0)
+	if (input.m_lastMouseX != 0.0)
 	{
-		xoffset = xpos - input.lastMouseX;
+		xoffset = xpos - input.m_lastMouseX;
 	}
-	if (input.lastMouseY != 0.0)
+	if (input.m_lastMouseY != 0.0)
 	{
-		yoffset = ypos - input.lastMouseY;
+		yoffset = ypos - input.m_lastMouseY;
 	}
-	input.lastMouseX = xpos;
-	input.lastMouseY = ypos;
+	input.m_lastMouseX = xpos;
+	input.m_lastMouseY = ypos;
 	
 	for (const auto& iter : input.m_mouseOffsetedMap)
 	{
@@ -100,6 +142,19 @@ void InputManager::onCursorPos(GLFWwindow* window, double xpos, double ypos)
 
 void InputManager::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
-
+	if (action == GLFW_PRESS)
+	{
+		for (const auto& iter : InputManager::getInstance().m_mousePressedMap)
+		{
+			iter.second(button);
+		}
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		for (const auto& iter : InputManager::getInstance().m_mouseReleasedMap)
+		{
+			iter.second(button);
+		}
+	}
 }
 

@@ -15,16 +15,23 @@ void Engine::init()
 	InputManager::getInstance().init(m_backend.getWindow());
 
 	// 初始化摄像机
-	m_camera = new Camera(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 2.5f, 0.1f);
+	m_camera = new Camera(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 10.0f, 0.1f);
+	m_camera->setFovy(45.0f);
+	m_camera->setClipping(0.1f, 100.0f);
+
 	InputManager::getInstance().registerKeyPressed(std::bind(&Camera::onKeyPressed, m_camera, std::placeholders::_1));
+	InputManager::getInstance().registerKeyReleased(std::bind(&Camera::onKeyReleased, m_camera, std::placeholders::_1));
 	InputManager::getInstance().registerMouseOffseted(std::bind(&Camera::onMouseOffseted, m_camera, std::placeholders::_1, std::placeholders::_2));
+	InputManager::getInstance().registerMousePressed(std::bind(&Camera::onMousePressed, m_camera, std::placeholders::_1));
+	InputManager::getInstance().registerMouseReleased(std::bind(&Camera::onMouseReleased, m_camera, std::placeholders::_1));
 
 	// 初始化渲染器
-	m_renderer.init(&m_backend);
+	m_renderer.init(&m_backend, m_camera);
 
 	// 加载模型资源，生成组件
 	std::vector<StaticMeshComponent> staticMeshComponents;
 	std::vector<std::string> modelNames = {
+		"asset/model/ground/ground.fbx",
 		"asset/model/dinosaur/dinosaur.fbx",
 		"asset/model/armadillo/armadillo.fbx",
 		"asset/model/dragon/dragon.fbx",

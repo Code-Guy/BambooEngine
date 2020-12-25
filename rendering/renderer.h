@@ -14,7 +14,7 @@
 class Renderer
 {
 public:
-	void init(class GraphicsBackend* graphicBackend);
+	void init(class GraphicsBackend* graphicBackend, class Camera* camera);
 	void render();
 	void destroy();
 
@@ -83,4 +83,5 @@ private:
 	size_t m_currentFrame = 0;
 
 	std::vector<BatchResource> m_batchResources;
+	class Camera* m_camera;
 };

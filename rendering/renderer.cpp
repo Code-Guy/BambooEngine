@@ -1,9 +1,11 @@
 #include "renderer.h"
 #include "io/asset_loader.h"
+#include "entity/camera.h"
 
-void Renderer::init(GraphicsBackend* graphicBackend)
+void Renderer::init(GraphicsBackend* graphicBackend, Camera* camera)
 {
 	m_backend = graphicBackend;
+	m_camera = camera;
 
 	createSwapChain();
 	createImageViews();
@@ -132,6 +134,7 @@ void Renderer::createSwapChain()
 	VkSurfaceFormatKHR surfaceFormat = pickSwapSurfaceFormat(details.formats);
 	VkPresentModeKHR presentMode = pickSwapPresentMode(details.presentModes);
 	VkExtent2D extent = pickSwapExtent(details.capabilities);
+	m_camera->setAspect(extent.width / static_cast<float>(extent.height));
 
 	m_swapchainImageFormat = surfaceFormat.format;
 	m_swapchainExtent = extent;
@@ -312,8 +315,8 @@ void Renderer::createGraphicsPipeline()
 {
 	// 加载shader binary code
 	std::vector<char> vertShaderCode, fragShaderCode;
-	AssetLoader::getInstance().loadBinary("asset/shader/bin/blinn_phong_vert.spv", vertShaderCode);
-	AssetLoader::getInstance().loadBinary("asset/shader/bin/blinn_phong_frag.spv", fragShaderCode);
+	AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_vert.spv", vertShaderCode);
+	AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_frag.spv", fragShaderCode);
 
 	VkShaderModule vertShaderModule = ResourceFactory::getInstance().createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = ResourceFactory::getInstance().createShaderModule(fragShaderCode);
@@ -511,15 +514,15 @@ void Renderer::createDescriptorPool()
 {
 	std::vector<VkDescriptorPoolSize> poolSizes(2, VkDescriptorPoolSize{});
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 4);
+	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 5);
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 4);
+	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 5);
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size() * 4);
+	poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size() * 5);
 
 	if (vkCreateDescriptorPool(m_backend->getDevice(), &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
 	{
@@ -783,11 +786,11 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.view = glm::lookAt(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchainExtent.width / static_cast<float>(m_swapchainExtent.height), 0.1f, 100.0f);
-	ubo.proj[1][1] *= -1; // glm主要是为OpenGL设计的，OpenGL和Vulkan的坐标系Y轴朝向相反，因此这里要乘以-1
+	ubo.view = m_camera->getViewMatrix();
+	ubo.proj = m_camera->getPerspectiveMatrix();
 
 	std::vector<glm::vec3> positions = {
+		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(-4.0f, -4.0f, 0.0f),
 		glm::vec3(-4.0f, 4.0f, 0.0f),
 		glm::vec3(4.0f, -4.0f, 0.0f),
@@ -797,7 +800,7 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 	for (size_t i = 0; i < m_batchResources.size(); ++i)
 	{
 		glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[i]);
-		ubo.model = glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model = i == 0 ? modelMat : glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		void* data;
 		const BatchResource& batchResource = m_batchResources[i];
