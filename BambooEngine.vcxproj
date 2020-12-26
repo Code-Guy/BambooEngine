@@ -127,7 +127,8 @@
       <AdditionalLibraryDirectories>thirdparty\vulkan\lib;thirdparty\glfw\lib;thirdparty\assimp\lib;thirdparty\boost\lib;thirdparty\yaml-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)thirdparty\assimp\bin\assimp-vc142-mtd.dll" "$(TargetDir)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,7 +152,8 @@
       <AdditionalLibraryDirectories>thirdparty\vulkan\lib;thirdparty\glfw\lib;thirdparty\assimp\lib;thirdparty\boost\lib;thirdparty\yaml-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)thirdparty\assimp\bin\assimp-vc142-mt.dll" "$(TargetDir)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
