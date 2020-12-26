@@ -118,6 +118,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include;thirdparty\yaml-cpp\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +140,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include;thirdparty\yaml-cpp\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -181,7 +183,14 @@
     <ClInclude Include="rendering\renderer.h" />
     <ClInclude Include="rendering\resource_factory.h" />
     <ClInclude Include="rendering\shader_manager.h" />
+    <ClInclude Include="resource\resource.h" />
     <ClInclude Include="utility\utility.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resource\bamboo.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\BambooEngine.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

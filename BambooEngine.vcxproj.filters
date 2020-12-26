@@ -69,6 +69,9 @@
     <Filter Include="config">
       <UniqueIdentifier>{f41b80e0-83ce-44d2-93d4-97cde5b50777}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{caa13018-4e79-4d0a-b3ec-8e629e8c77a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\engine.h">
@@ -113,5 +116,18 @@
     <ClInclude Include="rendering\shader_manager.h">
       <Filter>rendering</Filter>
     </ClInclude>
+    <ClInclude Include="resource\resource.h">
+      <Filter>resource</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resource\bamboo.ico">
+      <Filter>resource</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\BambooEngine.rc">
+      <Filter>resource</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
