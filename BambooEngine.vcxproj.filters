@@ -22,17 +22,23 @@
     <ClCompile Include="entity\entity_factory.cpp">
       <Filter>entity</Filter>
     </ClCompile>
-    <ClCompile Include="rendering\resource_factory.h">
-      <Filter>rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="rendering\resource_factory.cpp">
-      <Filter>rendering</Filter>
-    </ClCompile>
     <ClCompile Include="input\input_manager.cpp">
       <Filter>input</Filter>
     </ClCompile>
     <ClCompile Include="entity\camera.cpp">
       <Filter>entity</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\resource_factory.cpp">
+      <Filter>rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\utility.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="config\config_manager.cpp">
+      <Filter>config</Filter>
+    </ClCompile>
+    <ClCompile Include="rendering\shader_manager.cpp">
+      <Filter>rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +62,12 @@
     </Filter>
     <Filter Include="input">
       <UniqueIdentifier>{4f798e6d-1bf4-495e-a7f5-eb212ee2ff8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utility">
+      <UniqueIdentifier>{3d3e3060-a9e6-4219-9122-1238b0c0f0d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="config">
+      <UniqueIdentifier>{f41b80e0-83ce-44d2-93d4-97cde5b50777}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +100,18 @@
     </ClInclude>
     <ClInclude Include="entity\camera.h">
       <Filter>entity</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering\resource_factory.h">
+      <Filter>rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\utility.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="config\config_manager.h">
+      <Filter>config</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering\shader_manager.h">
+      <Filter>rendering</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

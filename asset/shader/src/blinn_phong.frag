@@ -28,7 +28,7 @@ void main()
 
 	// specular
 	float shininess = 64.0;
-	vec3 lightColor = vec3(0.3);
+	vec3 lightColor = vec3(0.5);
 
 	vec3 viewDirection = normalize(fpco.cameraPosition - inPosition);
 	vec3 reflectDirection = reflect(fpco.lightDirection, inNormal);

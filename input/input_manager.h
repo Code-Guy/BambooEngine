@@ -8,6 +8,7 @@ class InputManager
 public:
 	static InputManager& getInstance();
 	void init(struct GLFWwindow* window);
+	void destroy();
 
 	uint32_t registerKeyPressed(std::function<void(int)> onKeyPressed);
 	uint32_t registerKeyReleased(std::function<void(int)> onKeyReleased);

@@ -49,7 +49,7 @@ std::vector<StaticMeshComponent> AssetLoader::loadModel(const std::string& filen
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		throw std::runtime_error((boost::format("failed to load model£º%s, error: %s") % filename.c_str() % importer.GetErrorString()).str());
+		throw std::runtime_error((boost::format("failed to load model£º%s, error: %s") % filename % importer.GetErrorString()).str());
 	}
 
 	processNode(scene->mRootNode, scene, filename, staticMeshComponents);
@@ -64,10 +64,30 @@ Texture AssetLoader::loadTexure(const std::string& filename)
 
 	if (!texture.data)
 	{
-		throw std::runtime_error((boost::format("failed to load texture£º %s") % filename.c_str()).str());
+		throw std::runtime_error((boost::format("failed to load texture£º%s") % filename).str());
 	}
 
 	return texture;
+}
+
+std::vector<std::string> AssetLoader::traverseFiles(const std::string& directory)
+{
+	boost::filesystem::path p(directory);
+	boost::filesystem::directory_iterator end_itr;
+	std::vector<std::string> filenames;
+
+	// cycle through the directory
+	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
+	{
+		// If it's not a directory, list it. If you want to list directories too, just remove this check.
+		if (is_regular_file(itr->path())) 
+		{
+			// assign current file name to current_file and echo it out to the console.
+			filenames.push_back(itr->path().string());
+		}
+	}
+
+	return filenames;
 }
 
 std::string AssetLoader::loadString(const std::string& filename)

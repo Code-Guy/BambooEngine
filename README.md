@@ -1,17 +1,19 @@
 # BambooEngine
 
-A lightweight game engine implemented with C++ and Vulkan.
+A lightweight cross-platform game engine implemented with C++ and Vulkan.
 
 ## Dependencies
-- Vulkan SDK
-- Vulkan Memory Allocator
-- GLM
-- GLFW
-- Boost
-- Assimp
+- vulkan sdk
+- vulkan memory allocator
+- glm
+- glfw
+- boost
+- assimp
 - stb_image
-- FMOD
-- Bullet
+- entt
+- yaml-cpp
+- fmod
+- bullet
 
 ## Notes
-- Vulkan SDK should be installed first to compile shaders
+- The path of glslc.exe should be configured in asset/config/engine.yaml.

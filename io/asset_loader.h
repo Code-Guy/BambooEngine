@@ -15,6 +15,8 @@ public:
 	std::vector<StaticMeshComponent> loadModel(const std::string& filename);
 	Texture loadTexure(const std::string& filename);
 
+	std::vector<std::string> traverseFiles(const std::string& directory);
+
 private:
 	std::string loadString(const std::string& filename);
 

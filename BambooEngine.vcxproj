@@ -116,14 +116,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include;thirdparty\yaml-cpp\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3d.lib;assimp-vc142-mtd.lib;libboost_filesystem-vc142-mt-gd-x64-1_74.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>thirdparty\vulkan\lib;thirdparty\glfw\lib;thirdparty\assimp\lib;thirdparty\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3d.lib;assimp-vc142-mtd.lib;libboost_filesystem-vc142-mt-gd-x64-1_74.lib;yaml-cppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>thirdparty\vulkan\lib;thirdparty\glfw\lib;thirdparty\assimp\lib;thirdparty\boost\lib;thirdparty\yaml-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(SolutionDir)thirdparty\assimp\bin\assimp-vc142-mtd.dll" "$(TargetDir)"</Command>
@@ -137,7 +137,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;thirdparty;thirdparty\vulkan\include;thirdparty\glfw\include;thirdparty\assimp\include;thirdparty\boost\include;thirdparty\yaml-cpp\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -145,14 +145,15 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc142-mt.lib;libboost_filesystem-vc142-mt-x64-1_74.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>thirdparty\vulkan\lib;thirdparty\glfw\lib;thirdparty\assimp\lib;thirdparty\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc142-mt.lib;libboost_filesystem-vc142-mt-x64-1_74.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>thirdparty\vulkan\lib;thirdparty\glfw\lib;thirdparty\assimp\lib;thirdparty\boost\lib;thirdparty\yaml-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(SolutionDir)thirdparty\assimp\bin\assimp-vc142-mt.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="config\config_manager.cpp" />
     <ClCompile Include="core\engine.cpp" />
     <ClCompile Include="core\main.cpp" />
     <ClCompile Include="entity\camera.cpp" />
@@ -163,12 +164,14 @@
     <ClCompile Include="rendering\renderer.cpp" />
     <ClCompile Include="rendering\batch_resource.h" />
     <ClCompile Include="rendering\resource_factory.cpp" />
-    <ClCompile Include="rendering\resource_factory.h" />
+    <ClCompile Include="rendering\shader_manager.cpp" />
+    <ClCompile Include="utility\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="component\material.h" />
     <ClInclude Include="component\mesh_component.h" />
     <ClInclude Include="component\transform_component.h" />
+    <ClInclude Include="config\config_manager.h" />
     <ClInclude Include="core\engine.h" />
     <ClInclude Include="entity\camera.h" />
     <ClInclude Include="entity\entity_factory.h" />
@@ -176,6 +179,9 @@
     <ClInclude Include="io\asset_loader.h" />
     <ClInclude Include="rendering\graphics_backend.h" />
     <ClInclude Include="rendering\renderer.h" />
+    <ClInclude Include="rendering\resource_factory.h" />
+    <ClInclude Include="rendering\shader_manager.h" />
+    <ClInclude Include="utility\utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

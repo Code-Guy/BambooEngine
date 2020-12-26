@@ -1,8 +1,5 @@
 #pragma once
 
-#include "rendering/graphics_backend.h"
-#include "rendering/renderer.h"
-
 class Engine
 {
 public:
@@ -11,8 +8,8 @@ public:
 	void destroy();
 
 private:
-	GraphicsBackend m_backend;
-	Renderer m_renderer;
+	class GraphicsBackend* m_backend;
+	class Renderer* m_renderer;
 	class Camera* m_camera;
 
 	float m_deltaTime;

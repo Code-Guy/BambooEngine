@@ -19,6 +19,11 @@ void InputManager::init(GLFWwindow* window)
 	glfwSetMouseButtonCallback(window, onMouseButton);
 }
 
+void InputManager::destroy()
+{
+
+}
+
 uint32_t InputManager::registerKeyPressed(std::function<void(int)> onKeyPressed)
 {
 	m_keyPressedMap[m_inputEventHandle] = onKeyPressed;
