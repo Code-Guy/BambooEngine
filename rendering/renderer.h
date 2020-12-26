@@ -40,6 +40,7 @@ private:
 	void cleanupSwapchainBatchResource();
 	void cleanupBatchResource();
 
+	void updateCommandBuffer(uint32_t imageIndex);
 	void updateUniformBuffer(uint32_t imageIndex);
 	void updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIndex);
 

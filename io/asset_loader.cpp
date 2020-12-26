@@ -1,5 +1,6 @@
 #include "asset_loader.h"
 #include <fstream>
+#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
@@ -17,26 +18,31 @@ AssetLoader& AssetLoader::getInstance()
 	return loader;
 }
 
-void AssetLoader::loadBinary(const std::string& filename, std::vector<char>& buffer)
+std::vector<char> AssetLoader::loadBinary(const std::string& filename)
 {
 	// std::ios::ate 从文件尾开始读，好处是可以获取到文件大小
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open())
 	{
-		throw std::runtime_error((boost::format("failed to load shader：%s") % filename.c_str()).str());
+		throw std::runtime_error((boost::format("failed to load shader：%s") % filename).str());
 	}
 
+	std::vector<char> buffer;
 	size_t fileSize = (size_t)file.tellg();
 	buffer.resize(fileSize);
 
 	file.seekg(0);
 	file.read(buffer.data(), fileSize);
 	file.close();
+
+	return buffer;
 }
 
-void AssetLoader::loadModel(const std::string& filename, std::vector<StaticMeshComponent>& staticMeshComponents)
+std::vector<StaticMeshComponent> AssetLoader::loadModel(const std::string& filename)
 {
+	std::vector<StaticMeshComponent> staticMeshComponents;
+
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(filename.c_str(),
 		aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
@@ -47,16 +53,37 @@ void AssetLoader::loadModel(const std::string& filename, std::vector<StaticMeshC
 	}
 
 	processNode(scene->mRootNode, scene, filename, staticMeshComponents);
+
+	return staticMeshComponents;
 }
 
-void AssetLoader::loadTexure(const std::string& filename, Texture& texture)
+Texture AssetLoader::loadTexure(const std::string& filename)
 {
+	Texture texture;
 	texture.data = stbi_load(filename.c_str(), &texture.width, &texture.height, &texture.channels, STBI_rgb_alpha);
 
 	if (!texture.data)
 	{
 		throw std::runtime_error((boost::format("failed to load texture： %s") % filename.c_str()).str());
 	}
+
+	return texture;
+}
+
+std::string AssetLoader::loadString(const std::string& filename)
+{
+	constexpr auto read_size = std::size_t{ 4096 };
+	auto stream = std::ifstream{ filename.data() };
+	stream.exceptions(std::ios_base::badbit);
+
+	auto out = std::string{};
+	auto buf = std::string(read_size, '\0');
+	while (stream.read(&buf[0], read_size)) 
+	{
+		out.append(buf, 0, stream.gcount());
+	}
+	out.append(buf, 0, stream.gcount());
+	return out;
 }
 
 void AssetLoader::processNode(aiNode* node, const aiScene* scene, const std::string& filename, std::vector<StaticMeshComponent>& staticMeshComponents)
@@ -107,7 +134,7 @@ void AssetLoader::processMesh(aiMesh* mesh, const aiScene* scene, const std::str
 		material->GetTexture(aiTextureType_DIFFUSE, i, &aiStr);
 		boost::filesystem::path boostPath(aiStr.C_Str());
 		std::string baseTexFilename = (modelParentPath / boost::filesystem::path("texture") / boostPath.filename()).string();
-		loadTexure(baseTexFilename, staticMeshComponent.material.baseTex);
+		staticMeshComponent.material.baseTex = loadTexure(baseTexFilename);
 	}
 
 	staticMeshComponents.push_back(staticMeshComponent);

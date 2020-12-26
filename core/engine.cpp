@@ -40,8 +40,7 @@ void Engine::init()
 
 	for (const std::string& modelName : modelNames)
 	{
-		std::vector<StaticMeshComponent> components;
-		AssetLoader::getInstance().loadModel(modelName, components);
+		std::vector<StaticMeshComponent> components = AssetLoader::getInstance().loadModel(modelName);
 		staticMeshComponents.insert(staticMeshComponents.end(), components.begin(), components.end());
 	}
 	

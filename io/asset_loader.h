@@ -11,11 +11,13 @@ class AssetLoader
 public:
 	static AssetLoader& getInstance();
 
-	void loadBinary(const std::string& filename, std::vector<char>& buffer);
-	void loadModel(const std::string& filename, std::vector<StaticMeshComponent>& staticMeshComponents);
-	void loadTexure(const std::string& filename, Texture& texture);
+	std::vector<char> loadBinary(const std::string& filename);
+	std::vector<StaticMeshComponent> loadModel(const std::string& filename);
+	Texture loadTexure(const std::string& filename);
 
 private:
+	std::string loadString(const std::string& filename);
+
 	void processNode(struct aiNode* node, const struct aiScene* scene, const std::string& filename, std::vector<StaticMeshComponent>& staticMeshComponents);
 	void processMesh(struct aiMesh* mesh, const struct aiScene* scene, const std::string& filename, std::vector<StaticMeshComponent>& staticMeshComponents);
 };
