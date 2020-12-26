@@ -6,16 +6,20 @@
 
 #include <vector>
 
-struct UniformBufferObject
+struct UBO
 {
-	alignas(16) glm::mat4 mvp;
+	glm::mat4 mvp;
 };
 
-struct PushConstantsObject
+struct VPCO
 {
-	alignas(16) glm::mat4 mvp;
-	alignas(16) glm::vec4 cameraPosition;
-	alignas(16) glm::vec4 lightDirection;
+	glm::mat4 mvp;
+};
+
+struct FPCO
+{
+	glm::vec3 cameraPosition; float p0;
+	glm::vec3 lightDirection; float p1;
 };
 
 struct VmaBuffer

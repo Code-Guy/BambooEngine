@@ -1,12 +1,12 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(push_constant) uniform PushConstantsObject
+layout(push_constant) uniform FPCO
 {
-	mat4 mvp;
-	vec4 cameraPosition;
-	vec4 lightDirection;
-} pco;
+	layout(offset = 64)
+	vec3 cameraPosition; float p0;
+	vec3 lightDirection; float p1;
+} fpco;
 
 layout(binding = 1) uniform sampler2D texSampler;
 
@@ -18,6 +18,22 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {
-	//outColor = texture(texSampler, inTexCoord);
-	outColor = vec4(inNormal, 1.0);
+	vec3 baseColor = texture(texSampler, inTexCoord).xyz;
+
+	// ambient
+	float ambient = 0.05;
+
+	// diffuse
+	float diffuse = max(dot(-fpco.lightDirection, inNormal), 0.0);
+
+	// specular
+	float shininess = 64.0;
+	vec3 lightColor = vec3(0.3);
+
+	vec3 viewDirection = normalize(fpco.cameraPosition - inPosition);
+	vec3 reflectDirection = reflect(fpco.lightDirection, inNormal);
+	vec3 halfwayDirection = normalize(-fpco.lightDirection + inNormal);
+	float specular = pow(max(dot(halfwayDirection, inNormal), 0.0), shininess);
+
+	outColor = vec4(baseColor * ambient + baseColor * lightColor * diffuse + lightColor * specular, 1.0);
 }

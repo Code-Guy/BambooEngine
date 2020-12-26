@@ -465,11 +465,11 @@ void Renderer::createGraphicsPipeline()
 	// Push constants
 	m_pushConstantRanges.resize(2, VkPushConstantRange{});
 	m_pushConstantRanges[0].offset = 0;
-	m_pushConstantRanges[0].size = sizeof(glm::mat4);
+	m_pushConstantRanges[0].size = sizeof(VPCO);
 	m_pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 	m_pushConstantRanges[1].offset = m_pushConstantRanges[0].size;
-	m_pushConstantRanges[1].size = sizeof(glm::vec4) * 2;
+	m_pushConstantRanges[1].size = sizeof(FPCO);
 	m_pushConstantRanges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.size());
@@ -813,7 +813,7 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex)
 		glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[i]);
 		//ubo.model = i == 0 ? modelMat : glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-		UniformBufferObject ubo{};
+		UBO ubo{};
 		ubo.mvp = m_camera->getViewPerspectiveMatrix();
 		ubo.mvp *= modelMat;
 
@@ -841,17 +841,20 @@ void Renderer::updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIn
 		glm::vec3(4.0f, 4.0f, 0.0f)
 	};
 
-	PushConstantsObject pco{};
+	VPCO vpco{};
 	glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[batchIndex]);
-	pco.mvp = m_camera->getViewPerspectiveMatrix();
-	pco.mvp *= modelMat;
+	vpco.mvp = m_camera->getViewPerspectiveMatrix();
+	vpco.mvp *= modelMat;
 
-	pco.cameraPosition = glm::vec4(m_camera->getPosition(), 1.0f);
-	pco.lightDirection = glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f);
+	FPCO fpco{};
+	fpco.cameraPosition = m_camera->getPosition();
+	fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
 
-	for (const VkPushConstantRange& pushConstantRange : m_pushConstantRanges)
+	const void* pcos[] = { &vpco, &fpco };
+	for (size_t i = 0; i < m_pushConstantRanges.size(); ++i)
 	{
-		vkCmdPushConstants(commandBuffer, m_pipelineLayout, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, &pco);
+		const VkPushConstantRange& pushConstantRange = m_pushConstantRanges[i];
+		vkCmdPushConstants(commandBuffer, m_pipelineLayout, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pcos[i]);
 	}
 }
 

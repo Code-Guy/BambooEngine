@@ -135,7 +135,7 @@ void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image
 
 void ResourceFactory::createUniformBuffers(size_t swapchainSize, BatchResource& batchResource)
 {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+	VkDeviceSize bufferSize = sizeof(UBO);
 
 	batchResource.uniformBuffers.resize(swapchainSize);
 	for (size_t i = 0; i < swapchainSize; ++i)
@@ -170,7 +170,7 @@ void ResourceFactory::createDescriptorSets(size_t swapchainSize, VkDescriptorPoo
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = batchResource.uniformBuffers[i].buffer;
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
+		bufferInfo.range = sizeof(UBO);
 
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = batchResource.descriptorSets[i];

@@ -1,17 +1,15 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(binding = 0) uniform UniformBufferObject
+layout(binding = 0) uniform UBO
 {
 	mat4 mvp;
 } ubo;
 
-layout(push_constant) uniform PushConstantsObject
+layout(push_constant) uniform VPCO
 {
 	mat4 mvp;
-	vec4 cameraPosition;
-	vec4 lightDirection;
-} pco;
+} vpco;
 
 // dvec会使用2个slot
 layout(location = 0) in vec3 inPosition;
@@ -24,8 +22,9 @@ layout(location = 2) out vec3 outPosition;
 
 void main()
 {
-	gl_Position = pco.mvp * vec4(inPosition, 1.0);
+	gl_Position = vpco.mvp * vec4(inPosition, 1.0);
 	
 	outTexCoord = inTexCoord;
 	outNormal = inNormal;
+	outPosition = inPosition;
 }
