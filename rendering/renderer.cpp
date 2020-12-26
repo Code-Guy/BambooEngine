@@ -588,6 +588,8 @@ void Renderer::createFramebuffers()
 
 void Renderer::createCommandBuffers()
 {
+	// 清理Command Pool，避免重建Command Pool
+	vkFreeCommandBuffers(m_backend->getDevice(), m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 	m_commandBuffers.resize(m_swapchainFramebuffers.size());
 
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -752,9 +754,6 @@ void Renderer::cleanupSwapchain()
 	{
 		vkDestroyFramebuffer(m_backend->getDevice(), m_swapchainFramebuffers[i], nullptr);
 	}
-
-	// 清理Command Pool，避免重建Command Pool
-	vkFreeCommandBuffers(m_backend->getDevice(), m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 
 	vkDestroyRenderPass(m_backend->getDevice(), m_renderPass, nullptr);
 
