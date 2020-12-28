@@ -156,6 +156,11 @@ void AssetLoader::processMesh(aiMesh* mesh, const aiScene* scene, const std::str
 		std::string baseTexFilename = (modelParentPath / boost::filesystem::path("texture") / boostPath.filename()).string();
 		staticMeshComponent.material.baseTex = loadTexure(baseTexFilename);
 	}
+	// 如果贴图不存在，使用默认贴图
+	if (!staticMeshComponent.material.baseTex.data)
+	{
+		staticMeshComponent.material.baseTex = loadTexure("asset/texture/default_texture.jpg");
+	}
 
 	staticMeshComponents.push_back(staticMeshComponent);
 }

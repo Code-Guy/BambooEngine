@@ -28,9 +28,9 @@ void Engine::init()
 	InputManager::getInstance().init(m_backend->getWindow());
 
 	// 初始化摄像机
-	m_camera = new Camera(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 10.0f, 0.1f);
+	m_camera = new Camera(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 50.0f, 0.1f);
 	m_camera->setFovy(45.0f);
-	m_camera->setClipping(0.1f, 100.0f);
+	m_camera->setClipping(0.1f, 1000.0f);
 
 	InputManager::getInstance().registerKeyPressed(std::bind(&Camera::onKeyPressed, m_camera, std::placeholders::_1));
 	InputManager::getInstance().registerKeyReleased(std::bind(&Camera::onKeyReleased, m_camera, std::placeholders::_1));
@@ -45,11 +45,12 @@ void Engine::init()
 	// 加载模型资源，生成组件
 	std::vector<StaticMeshComponent> staticMeshComponents;
 	std::vector<std::string> modelNames = {
-		"asset/model/ground/ground.fbx",
-		"asset/model/dinosaur/dinosaur.fbx",
-		"asset/model/armadillo/armadillo.fbx",
-		"asset/model/dragon/dragon.fbx",
-		"asset/model/ogre/ogre.fbx"
+		//"asset/model/ground/ground.fbx",
+		//"asset/model/dinosaur/dinosaur.fbx",
+		//"asset/model/armadillo/armadillo.fbx",
+		//"asset/model/dragon/dragon.fbx",
+		//"asset/model/ogre/ogre.fbx",
+		"asset/model/sponza/sponza.fbx",
 	};
 
 	for (const std::string& modelName : modelNames)

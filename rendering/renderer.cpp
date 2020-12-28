@@ -2,6 +2,8 @@
 #include "io/asset_loader.h"
 #include "entity/camera.h"
 
+#define MAX_DESC_NUM 100
+
 void Renderer::init(GraphicsBackend* graphicBackend, Camera* camera)
 {
 	m_backend = graphicBackend;
@@ -526,15 +528,15 @@ void Renderer::createDescriptorPool()
 {
 	std::vector<VkDescriptorPoolSize> poolSizes(2, VkDescriptorPoolSize{});
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 5);
+	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * MAX_DESC_NUM);
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * 5);
+	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size() * MAX_DESC_NUM);
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size() * 5);
+	poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size() * MAX_DESC_NUM);
 
 	if (vkCreateDescriptorPool(m_backend->getDevice(), &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
 	{
@@ -846,7 +848,7 @@ void Renderer::updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIn
 	};
 
 	VPCO vpco{};
-	glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[batchIndex]);
+	glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[0]);
 	vpco.mvp = m_camera->getViewPerspectiveMatrix();
 	vpco.mvp *= modelMat;
 
