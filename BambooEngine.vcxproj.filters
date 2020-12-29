@@ -40,6 +40,24 @@
     <ClCompile Include="rendering\shader_manager.cpp">
       <Filter>rendering</Filter>
     </ClCompile>
+    <ClCompile Include="entity\static_mesh_entity.cpp">
+      <Filter>entity</Filter>
+    </ClCompile>
+    <ClCompile Include="component\static_mesh_component.cpp">
+      <Filter>component</Filter>
+    </ClCompile>
+    <ClCompile Include="entity\base_entity.cpp">
+      <Filter>entity</Filter>
+    </ClCompile>
+    <ClCompile Include="component\mesh_component.cpp">
+      <Filter>component</Filter>
+    </ClCompile>
+    <ClCompile Include="component\skinned_mesh_component.cpp">
+      <Filter>component</Filter>
+    </ClCompile>
+    <ClCompile Include="component\base_component.cpp">
+      <Filter>component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="core">
@@ -89,12 +107,6 @@
     <ClInclude Include="component\material.h">
       <Filter>component</Filter>
     </ClInclude>
-    <ClInclude Include="component\mesh_component.h">
-      <Filter>component</Filter>
-    </ClInclude>
-    <ClInclude Include="component\transform_component.h">
-      <Filter>component</Filter>
-    </ClInclude>
     <ClInclude Include="entity\entity_factory.h">
       <Filter>entity</Filter>
     </ClInclude>
@@ -118,6 +130,27 @@
     </ClInclude>
     <ClInclude Include="resource\resource.h">
       <Filter>resource</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\static_mesh_entity.h">
+      <Filter>entity</Filter>
+    </ClInclude>
+    <ClInclude Include="component\static_mesh_component.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\mesh.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\base_entity.h">
+      <Filter>entity</Filter>
+    </ClInclude>
+    <ClInclude Include="component\mesh_component.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\skinned_mesh_component.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\base_component.h">
+      <Filter>component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

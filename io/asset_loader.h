@@ -4,7 +4,7 @@
 #include <vector>
 #include <tuple>
 
-#include "component/mesh_component.h"
+#include "component/mesh.h"
 
 class AssetLoader
 {

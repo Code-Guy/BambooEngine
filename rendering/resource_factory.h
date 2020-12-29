@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rendering/batch_resource.h"
-#include "component/mesh_component.h"
+#include "component/mesh.h"
 
 class ResourceFactory
 {
