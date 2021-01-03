@@ -52,6 +52,7 @@ public:
 	const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() { return m_physicalDeviceProperties; }
 	SwapChainSupportDetails getSwapChainSupport();
 	const QueueFamilyIndices& getQueueFamilyIndices() { return m_queueFamilyIndices; }
+	VkFormat getSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 	VkSampleCountFlagBits getMsaaSamples() { return m_msaaSamples; }
 

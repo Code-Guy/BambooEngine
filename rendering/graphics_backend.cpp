@@ -62,6 +62,23 @@ SwapChainSupportDetails GraphicsBackend::getSwapChainSupport()
 	return querySwapChainSupport(m_physicalDevice);
 }
 
+VkFormat GraphicsBackend::getSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+{
+	for (VkFormat format : candidates)
+	{
+		VkFormatProperties props;
+		vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
+
+		if ((tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) ||
+			(tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features))
+		{
+			return format;
+		}
+	}
+
+	throw std::runtime_error("failed to find supported format!");
+}
+
 void GraphicsBackend::initWindow()
 {
 	glfwInit();

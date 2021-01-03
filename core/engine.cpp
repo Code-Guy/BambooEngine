@@ -60,10 +60,10 @@ void Engine::init()
 	}
 	
 	// 通过组件生成渲染资源
-	std::vector<BatchResource> batchResources(staticMeshComponents.size());
+	std::vector<BatchResource*> batchResources;
 	for (size_t i = 0; i < staticMeshComponents.size(); ++i)
 	{
-		ResourceFactory::getInstance().createBatchResource(staticMeshComponents[i], batchResources[i]);
+		batchResources.push_back(ResourceFactory::getInstance().createBatchResource(staticMeshComponents[i]));
 	}
 
 	// 设置渲染器渲染资源

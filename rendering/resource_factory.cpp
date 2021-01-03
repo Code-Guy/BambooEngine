@@ -20,17 +20,21 @@ void ResourceFactory::destroy()
 	vkDestroyCommandPool(m_backend->getDevice(), m_instantCommandPool, nullptr);
 }
 
-void ResourceFactory::createBatchResource(const StaticMeshComponent& staticMeshComponent, BatchResource& batchResource)
+StaticMeshBatchResource* ResourceFactory::createBatchResource(const StaticMeshComponent& staticMeshComponent)
 {
-	createVertexBuffer(staticMeshComponent.mesh.vertices, batchResource.vertexBuffer);
-	createIndexBuffer(staticMeshComponent.mesh.indices, batchResource.indexBuffer, batchResource.indiceSize);
+	StaticMeshBatchResource* batchResource = new StaticMeshBatchResource;
 
-	VmaImage& vmaImage = batchResource.baseIVS.vmaImage;
+	createVertexBuffer(staticMeshComponent.mesh.vertices, batchResource->vertexBuffer);
+	createIndexBuffer(staticMeshComponent.mesh.indices, batchResource->indexBuffer, batchResource->indiceSize);
+
+	VmaImage& vmaImage = batchResource->baseIVS.vmaImage;
 	const Texture& baseTex = staticMeshComponent.material.baseTex;
 
 	createTextureImage(baseTex, vmaImage);
-	batchResource.baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
-	batchResource.baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
+	batchResource->baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
+	batchResource->baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
+
+	return batchResource;
 }
 
 void ResourceFactory::createVertexBuffer(const std::vector<Vertex>& vertices, VmaBuffer& vertexBuffer)
@@ -131,70 +135,6 @@ void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image
 
 	// 生成mipmap，并将image转移到READ_ONLY_OPT状态，便于在shader中访问
 	generateMipmaps(image.image, VK_FORMAT_R8G8B8A8_SRGB, width, height, mipLevels);
-}
-
-void ResourceFactory::createUniformBuffers(size_t swapchainSize, BatchResource& batchResource)
-{
-	VkDeviceSize bufferSize = sizeof(UBO);
-
-	batchResource.uniformBuffers.resize(swapchainSize);
-	for (size_t i = 0; i < swapchainSize; ++i)
-	{
-		createBuffer(bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VMA_MEMORY_USAGE_CPU_ONLY,
-			batchResource.uniformBuffers[i]);
-	}
-}
-
-void ResourceFactory::createDescriptorSets(size_t swapchainSize, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, BatchResource& batchResource)
-{
-	std::vector<VkDescriptorSetLayout> layouts(swapchainSize, descriptorSetLayout);
-
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
-	allocInfo.pSetLayouts = layouts.data();
-
-	batchResource.descriptorSets.resize(swapchainSize);
-	if (vkAllocateDescriptorSets(m_backend->getDevice(), &allocInfo, batchResource.descriptorSets.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate descriptor sets!");
-	}
-
-	for (size_t i = 0; i < batchResource.descriptorSets.size(); ++i)
-	{
-		std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
-
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = batchResource.uniformBuffers[i].buffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBO);
-
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = batchResource.descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = batchResource.baseIVS.view;
-		imageInfo.sampler = batchResource.baseIVS.sampler;
-
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = batchResource.descriptorSets[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-
-		vkUpdateDescriptorSets(m_backend->getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
 }
 
 VkImageView ResourceFactory::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)

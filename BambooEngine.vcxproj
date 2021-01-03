@@ -164,11 +164,16 @@
     <ClCompile Include="entity\entity_factory.cpp" />
     <ClCompile Include="input\input_manager.cpp" />
     <ClCompile Include="io\asset_loader.cpp" />
+    <ClCompile Include="rendering\framebuffer.cpp" />
     <ClCompile Include="rendering\graphics_backend.cpp" />
+    <ClCompile Include="rendering\pipeline.cpp" />
     <ClCompile Include="rendering\renderer.cpp" />
     <ClCompile Include="rendering\batch_resource.h" />
+    <ClCompile Include="rendering\render_pass.cpp" />
     <ClCompile Include="rendering\resource_factory.cpp" />
     <ClCompile Include="rendering\shader_manager.cpp" />
+    <ClCompile Include="rendering\static_mesh_pipeline.cpp" />
+    <ClCompile Include="rendering\swapchain.cpp" />
     <ClCompile Include="utility\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -181,10 +186,15 @@
     <ClInclude Include="entity\entity_factory.h" />
     <ClInclude Include="input\input_manager.h" />
     <ClInclude Include="io\asset_loader.h" />
+    <ClInclude Include="rendering\framebuffer.h" />
     <ClInclude Include="rendering\graphics_backend.h" />
+    <ClInclude Include="rendering\pipeline.h" />
     <ClInclude Include="rendering\renderer.h" />
+    <ClInclude Include="rendering\render_pass.h" />
     <ClInclude Include="rendering\resource_factory.h" />
     <ClInclude Include="rendering\shader_manager.h" />
+    <ClInclude Include="rendering\static_mesh_pipeline.h" />
+    <ClInclude Include="rendering\swapchain.h" />
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="utility\utility.h" />
   </ItemGroup>
