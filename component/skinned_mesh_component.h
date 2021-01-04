@@ -4,5 +4,6 @@
 
 class SkinnedMeshComponent : public MeshComponent
 {
-	SkinnedMesh* m_mesh;
+public:
+	std::shared_ptr<SkinnedMesh> m_mesh;
 };

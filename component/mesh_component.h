@@ -9,5 +9,6 @@ class MeshComponent : public BaseComponent
 public:
 	virtual void tick(float deltaTime) override;
 
-	Material* m_material;
+	std::vector<std::shared_ptr<Material>> m_materials;
+	std::vector<uint32_t> m_sections;
 };

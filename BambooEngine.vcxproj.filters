@@ -84,9 +84,6 @@
     <Filter Include="rendering">
       <UniqueIdentifier>{175ead01-7144-4b95-84a6-c367a94e8c72}</UniqueIdentifier>
     </Filter>
-    <Filter Include="system">
-      <UniqueIdentifier>{b6625577-3470-4476-811a-c0e87dfa962e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="component">
       <UniqueIdentifier>{3ed5ebc4-9181-4013-b04e-f56a83d0ef60}</UniqueIdentifier>
     </Filter>

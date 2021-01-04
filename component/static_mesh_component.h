@@ -4,5 +4,6 @@
 
 class StaticMeshComponent : public MeshComponent
 {
-	StaticMesh* m_mesh;
+public:
+	std::shared_ptr<StaticMesh> m_mesh;
 };
