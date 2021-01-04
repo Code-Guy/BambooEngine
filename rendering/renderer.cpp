@@ -334,10 +334,19 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_staticMeshPipeline.getPipelineLayout(), 0, 1, &batchResource->descriptorSets[imageIndex], 0, nullptr);
 		updatePushConstants(commandBuffer, j);
 
-		vkCmdDrawIndexed(commandBuffer, batchResource->indiceSize, 1, 0, 0, 0);
+		std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
+		uint32_t indexOffset = 0;
+		for (size_t k = 0; k < indexCounts.size(); ++k)
+		{
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_staticMeshPipeline.getPipelineLayout(), 
+				0, 1, &batchResource->descriptorSets[imageIndex * indexCounts.size() + k], 0, nullptr);
+
+			uint32_t indexCount = indexCounts[k] - indexOffset;
+			vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
+			indexOffset = indexCount;
+		}
 	}
 
 	vkCmdEndRenderPass(commandBuffer);

@@ -12,7 +12,7 @@ public:
 	static AssetLoader& getInstance();
 
 	std::vector<char> loadBinary(const std::string& filename);
-	std::vector<std::shared_ptr<StaticMeshComponent>> loadModel(const std::string& filename);
+	std::shared_ptr<StaticMeshComponent> loadModel(const std::string& filename);
 	std::shared_ptr<Texture> loadTexure(const std::string& filename);
 
 	std::vector<std::string> traverseFiles(const std::string& directory);
@@ -20,6 +20,6 @@ public:
 private:
 	std::string loadString(const std::string& filename);
 
-	void processNode(struct aiNode* assNode, const struct aiScene* assScene, const std::string& filename, std::vector<std::shared_ptr<StaticMeshComponent>>& staticMeshComponents);
-	void processMesh(struct aiMesh* assMesh, const struct aiScene* assScene, const std::string& filename, std::vector<std::shared_ptr<StaticMeshComponent>>& staticMeshComponents);
+	void processNode(struct aiNode* assNode, const struct aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent);
+	void processMesh(struct aiMesh* assMesh, const struct aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent);
 };

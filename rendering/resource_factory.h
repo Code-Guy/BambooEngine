@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rendering/batch_resource.h"
-#include "component/mesh.h"
+#include "component/static_mesh_component.h"
 
 class ResourceFactory
 {
@@ -10,11 +10,11 @@ public:
 	void init(class GraphicsBackend* graphicsBackend);
 	void destroy();
 
-	StaticMeshBatchResource* createBatchResource(const StaticMeshComponent& staticMeshComponent);
+	StaticMeshBatchResource* createBatchResource(std::shared_ptr<StaticMeshComponent>& staticMeshComponent);
 
-	void createVertexBuffer(const std::vector<Vertex>& vertices, VmaBuffer& vertexBuffer);
-	void createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer, uint32_t& indiceSize);
-	void createTextureImage(const Texture& texture, VmaImage& image);
+	void createVertexBuffer(const std::vector<StaticVertex>& vertices, VmaBuffer& vertexBuffer);
+	void createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer);
+	void createTextureImage(std::shared_ptr<Texture>& texture, VmaImage& image);
 	
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkSampler createSampler(VkFilter minFilter, VkFilter maxFilter, VkSamplerAddressMode adressMode, uint32_t mipLevels);

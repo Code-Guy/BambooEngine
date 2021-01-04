@@ -39,9 +39,9 @@ std::vector<char> AssetLoader::loadBinary(const std::string& filename)
 	return buffer;
 }
 
-std::vector<std::shared_ptr<StaticMeshComponent>> AssetLoader::loadModel(const std::string& filename)
+std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& filename)
 {
-	std::vector<std::shared_ptr<StaticMeshComponent>> staticMeshComponents;
+	std::shared_ptr<StaticMeshComponent> staticMeshComponent;
 
 	Assimp::Importer importer;
 	const aiScene* assScene = importer.ReadFile(filename.c_str(),
@@ -52,9 +52,12 @@ std::vector<std::shared_ptr<StaticMeshComponent>> AssetLoader::loadModel(const s
 		throw std::runtime_error((boost::format("failed to load model£º%s, error: %s") % filename % importer.GetErrorString()).str());
 	}
 
-	processNode(assScene->mRootNode, assScene, filename, staticMeshComponents);
+	staticMeshComponent = std::make_shared<StaticMeshComponent>();
+	staticMeshComponent->m_mesh = std::make_shared<StaticMesh>();
 
-	return staticMeshComponents;
+	processNode(assScene->mRootNode, assScene, filename, staticMeshComponent);
+
+	return staticMeshComponent;
 }
 
 std::shared_ptr<Texture> AssetLoader::loadTexure(const std::string& filename)
@@ -106,42 +109,48 @@ std::string AssetLoader::loadString(const std::string& filename)
 	return out;
 }
 
-void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const std::string& filename, std::vector<std::shared_ptr<StaticMeshComponent>>& staticMeshComponents)
+void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
 {
 	for (uint32_t i = 0; i < assNode->mNumMeshes; ++i)
 	{
 		aiMesh* assMesh = assScene->mMeshes[assNode->mMeshes[i]];
-		processMesh(assMesh, assScene, filename, staticMeshComponents);
+		processMesh(assMesh, assScene, filename, staticMeshComponent);
 	}
 
 	for (uint32_t i = 0; i < assNode->mNumChildren; ++i)
 	{
-		processNode(assNode->mChildren[i], assScene, filename, staticMeshComponents);
+		processNode(assNode->mChildren[i], assScene, filename, staticMeshComponent);
 	}
 }
 
-void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, std::vector<std::shared_ptr<StaticMeshComponent>>& staticMeshComponents)
+void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
 {
-	std::shared_ptr<StaticMesh> staticMesh = std::make_shared<StaticMesh>();
+	std::shared_ptr<StaticMesh> mesh = staticMeshComponent->m_mesh;
+	std::vector<std::shared_ptr<Material>>& materials = staticMeshComponent->m_materials;
+	std::vector<uint32_t>& indexCounts = staticMeshComponent->m_indexCounts;
 
 	// vertices
-	staticMesh->vertices.resize(assMesh->mNumVertices);
 	for (uint32_t i = 0; i < assMesh->mNumVertices; ++i)
 	{
-		staticMesh->vertices[i].position = { assMesh->mVertices[i].x, assMesh->mVertices[i].y, assMesh->mVertices[i].z };
-		staticMesh->vertices[i].texCoord = { assMesh->mTextureCoords[0][i].x, assMesh->mTextureCoords[0][i].y };
-		staticMesh->vertices[i].normal = { assMesh->mNormals[i].x, assMesh->mNormals[i].y, assMesh->mNormals[i].z };
+		StaticVertex vertex;
+		vertex.position = { assMesh->mVertices[i].x, assMesh->mVertices[i].y, assMesh->mVertices[i].z };
+		vertex.texCoord = { assMesh->mTextureCoords[0][i].x, assMesh->mTextureCoords[0][i].y };
+		vertex.normal = { assMesh->mNormals[i].x, assMesh->mNormals[i].y, assMesh->mNormals[i].z };
+
+		mesh->vertices.push_back(vertex);
 	}
 
 	// indices
+	uint32_t baseIndex = static_cast<uint32_t>(mesh->indices.size());
 	for (uint32_t i = 0; i < assMesh->mNumFaces; ++i)
 	{
 		const aiFace& face = assMesh->mFaces[i];
 		for (uint32_t j = 0; j < face.mNumIndices; ++j)
 		{
-			staticMesh->indices.push_back(face.mIndices[j]);
+			mesh->indices.push_back(baseIndex + face.mIndices[j]);
 		}
 	}
+	indexCounts.push_back(static_cast<uint32_t>(mesh->indices.size()));
 
 	// materials
 	std::shared_ptr<Material> material = std::make_shared<Material>();
@@ -162,8 +171,5 @@ void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const st
 	{
 		material->baseTex = loadTexure("asset/texture/default_texture.jpg");
 	}
-
-	std::shared_ptr<StaticMeshComponent> staticMeshComponent = std::make_shared<StaticMeshComponent>();
-	staticMeshComponent->
-	staticMeshComponents.push_back(staticMeshComponent);
+	materials.push_back(material);
 }

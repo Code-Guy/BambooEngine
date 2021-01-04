@@ -11,6 +11,7 @@ public:
 
 	virtual void tick(float deltaTime) override;
 
-private:
 	std::shared_ptr<StaticMeshComponent> m_staticMeshComponent;
+
+private:
 };

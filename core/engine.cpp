@@ -42,8 +42,6 @@ void Engine::init()
 	m_renderer = new Renderer;
 	m_renderer->init(m_backend, m_camera);
 
-	// 加载模型资源，生成组件
-	std::vector<StaticMeshComponent> staticMeshComponents;
 	std::vector<std::string> modelNames = {
 		//"asset/model/ground/ground.fbx",
 		//"asset/model/dinosaur/dinosaur.fbx",
@@ -53,17 +51,14 @@ void Engine::init()
 		"asset/model/sponza/sponza.fbx",
 	};
 
+	std::vector<BatchResource*> batchResources;
 	for (const std::string& modelName : modelNames)
 	{
-		std::vector<StaticMeshComponent> components = AssetLoader::getInstance().loadModel(modelName);
-		staticMeshComponents.insert(staticMeshComponents.end(), components.begin(), components.end());
-	}
-	
-	// 通过组件生成渲染资源
-	std::vector<BatchResource*> batchResources;
-	for (size_t i = 0; i < staticMeshComponents.size(); ++i)
-	{
-		batchResources.push_back(ResourceFactory::getInstance().createBatchResource(staticMeshComponents[i]));
+		// 加载模型资源，生成组件
+		std::shared_ptr<StaticMeshComponent> staticMeshComponent = AssetLoader::getInstance().loadModel(modelName);
+
+		// 通过组件生成渲染资源
+		batchResources.push_back(ResourceFactory::getInstance().createBatchResource(staticMeshComponent));
 	}
 
 	// 设置渲染器渲染资源

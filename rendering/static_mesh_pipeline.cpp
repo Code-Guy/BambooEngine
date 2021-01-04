@@ -3,6 +3,7 @@
 void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 {
 	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource;
+	uint32_t sectionCount = static_cast<uint32_t>(batch->indexCounts.size());
 
 	std::vector<VkDescriptorSetLayout> layouts(SWAPCHAIN_IMAGE_NUM, m_descriptorSetLayout);
 
@@ -12,7 +13,7 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
 	allocInfo.pSetLayouts = layouts.data();
 
-	batch->descriptorSets.resize(SWAPCHAIN_IMAGE_NUM);
+	batch->descriptorSets.resize(SWAPCHAIN_IMAGE_NUM * sectionCount);
 	if (vkAllocateDescriptorSets(m_backend->getDevice(), &allocInfo, batch->descriptorSets.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor sets!");
@@ -20,35 +21,40 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 
 	for (size_t i = 0; i < SWAPCHAIN_IMAGE_NUM; ++i)
 	{
-		std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
+		for (size_t j = 0; j < sectionCount; ++j)
+		{
+			size_t index = sectionCount * i + j;
 
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = batch->uniformBuffers[i].buffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBO);
+			std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
 
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = batch->descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = batch->uniformBuffers[index].buffer;
+			bufferInfo.offset = 0;
+			bufferInfo.range = sizeof(UBO);
 
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = batch->baseIVS.view;
-		imageInfo.sampler = batch->baseIVS.sampler;
+			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet = batch->descriptorSets[index];
+			descriptorWrites[0].dstBinding = 0;
+			descriptorWrites[0].dstArrayElement = 0;
+			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[0].descriptorCount = 1;
+			descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = batch->descriptorSets[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
+			VkDescriptorImageInfo imageInfo{};
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = batch->baseIVSs[j].view;
+			imageInfo.sampler = batch->baseIVSs[j].sampler;
 
-		vkUpdateDescriptorSets(m_backend->getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[1].dstSet = batch->descriptorSets[index];
+			descriptorWrites[1].dstBinding = 1;
+			descriptorWrites[1].dstArrayElement = 0;
+			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[1].descriptorCount = 1;
+			descriptorWrites[1].pImageInfo = &imageInfo;
+
+			vkUpdateDescriptorSets(m_backend->getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		}
 	}
 }
 
@@ -136,14 +142,14 @@ std::vector<VkPipelineShaderStageCreateInfo> StaticMeshPipeline::createShaderSta
 
 VkPipelineVertexInputStateCreateInfo StaticMeshPipeline::createVertexInputState()
 {
-	// Vertex Input
+	// StaticVertex Input
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
 	// ∂•µ„∞Û∂®√Ë ˆ
 	m_bindingDescriptions.resize(1, VkVertexInputBindingDescription{});
 	m_bindingDescriptions[0].binding = 0;
-	m_bindingDescriptions[0].stride = sizeof(Vertex);
+	m_bindingDescriptions[0].stride = sizeof(StaticVertex);
 	m_bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	// ∂•µ„ Ù–‘√Ë ˆ
@@ -152,17 +158,17 @@ VkPipelineVertexInputStateCreateInfo StaticMeshPipeline::createVertexInputState(
 	m_attributeDescriptions[0].binding = 0;
 	m_attributeDescriptions[0].location = 0;
 	m_attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	m_attributeDescriptions[0].offset = offsetof(Vertex, position);
+	m_attributeDescriptions[0].offset = offsetof(StaticVertex, position);
 
 	m_attributeDescriptions[1].binding = 0;
 	m_attributeDescriptions[1].location = 1;
 	m_attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-	m_attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+	m_attributeDescriptions[1].offset = offsetof(StaticVertex, texCoord);
 
 	m_attributeDescriptions[2].binding = 0;
 	m_attributeDescriptions[2].location = 2;
 	m_attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-	m_attributeDescriptions[2].offset = offsetof(Vertex, normal);
+	m_attributeDescriptions[2].offset = offsetof(StaticVertex, normal);
 
 	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(m_bindingDescriptions.size());
 	vertexInputInfo.pVertexBindingDescriptions = m_bindingDescriptions.data();

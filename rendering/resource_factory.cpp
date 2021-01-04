@@ -20,24 +20,31 @@ void ResourceFactory::destroy()
 	vkDestroyCommandPool(m_backend->getDevice(), m_instantCommandPool, nullptr);
 }
 
-StaticMeshBatchResource* ResourceFactory::createBatchResource(const StaticMeshComponent& staticMeshComponent)
+StaticMeshBatchResource* ResourceFactory::createBatchResource(std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
 {
 	StaticMeshBatchResource* batchResource = new StaticMeshBatchResource;
 
-	createVertexBuffer(staticMeshComponent.mesh.vertices, batchResource->vertexBuffer);
-	createIndexBuffer(staticMeshComponent.mesh.indices, batchResource->indexBuffer, batchResource->indiceSize);
+	createVertexBuffer(staticMeshComponent->m_mesh->vertices, batchResource->vertexBuffer);
 
-	VmaImage& vmaImage = batchResource->baseIVS.vmaImage;
-	const Texture& baseTex = staticMeshComponent.material.baseTex;
+	batchResource->indexCounts = staticMeshComponent->m_indexCounts;
+	createIndexBuffer(staticMeshComponent->m_mesh->indices, batchResource->indexBuffer);
 
-	createTextureImage(baseTex, vmaImage);
-	batchResource->baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
-	batchResource->baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
+	batchResource->baseIVSs.resize(staticMeshComponent->m_materials.size());
+	for (size_t i = 0; i < staticMeshComponent->m_materials.size(); ++i)
+	{
+		std::shared_ptr<Material>& material = staticMeshComponent->m_materials[i];
+		VmaImageViewSampler baseIVS = batchResource->baseIVSs[i];
+
+		VmaImage& vmaImage = baseIVS.vmaImage;
+		createTextureImage(material->baseTex, vmaImage);
+		baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
+		baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
+	}
 
 	return batchResource;
 }
 
-void ResourceFactory::createVertexBuffer(const std::vector<Vertex>& vertices, VmaBuffer& vertexBuffer)
+void ResourceFactory::createVertexBuffer(const std::vector<StaticVertex>& vertices, VmaBuffer& vertexBuffer)
 {
 	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -65,9 +72,8 @@ void ResourceFactory::createVertexBuffer(const std::vector<Vertex>& vertices, Vm
 	vmaDestroyBuffer(m_backend->getAllocator(), stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
-void ResourceFactory::createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer, uint32_t& indiceSize)
+void ResourceFactory::createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer)
 {
-	indiceSize = static_cast<uint32_t>(indices.size());
 	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
 	VmaBuffer stagingBuffer;
@@ -94,10 +100,10 @@ void ResourceFactory::createIndexBuffer(const std::vector<uint32_t>& indices, Vm
 	vmaDestroyBuffer(m_backend->getAllocator(), stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
-void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image)
+void ResourceFactory::createTextureImage(std::shared_ptr<Texture>& texture, VmaImage& image)
 {
-	int width = texture.width;
-	int height = texture.height;
+	int width = texture->width;
+	int height = texture->height;
 
 	VkDeviceSize imageSize = width * height * 4;
 	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
@@ -113,7 +119,7 @@ void ResourceFactory::createTextureImage(const Texture& texture, VmaImage& image
 	// 将图片数据拷贝到staging buffer里
 	void* data;
 	vmaMapMemory(m_backend->getAllocator(), stagingBuffer.allocation, &data);
-	memcpy(data, texture.data, static_cast<size_t>(imageSize));
+	memcpy(data, texture->data, static_cast<size_t>(imageSize));
 	vmaUnmapMemory(m_backend->getAllocator(), stagingBuffer.allocation);
 
 	// 清理图片数据

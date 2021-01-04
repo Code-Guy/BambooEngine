@@ -2,8 +2,8 @@
 
 StaticMeshEntity::StaticMeshEntity()
 {
-	m_staticMeshComponent = new StaticMeshComponent;
-	registerComponent("static_mesh", m_staticMeshComponent);
+	m_staticMeshComponent = std::make_shared<StaticMeshComponent>();
+	registerComponent("static_mesh", m_staticMeshComponent.get());
 }
 
 StaticMeshEntity::~StaticMeshEntity()

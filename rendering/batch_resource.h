@@ -75,7 +75,7 @@ struct BatchResource
 {
 	VmaBuffer vertexBuffer;
 	VmaBuffer indexBuffer;
-	uint32_t indiceSize;
+	std::vector<uint32_t> indexCounts;
 
 	std::vector<VmaBuffer> uniformBuffers;
 	std::vector<VkDescriptorSet> descriptorSets;
@@ -94,11 +94,14 @@ struct BatchResource
 
 struct StaticMeshBatchResource : public BatchResource
 {
-	VmaImageViewSampler baseIVS;
+	std::vector<VmaImageViewSampler> baseIVSs;
 
 	virtual void destroy(VkDevice device, VmaAllocator allocator)
 	{
 		BatchResource::destroy(device, allocator);
-		baseIVS.destroy(device, allocator);
+		for (VmaImageViewSampler& baseIVS : baseIVSs)
+		{
+			baseIVS.destroy(device, allocator);
+		}
 	}
 };
