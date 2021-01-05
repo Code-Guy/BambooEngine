@@ -11,6 +11,7 @@
 
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 AssetLoader& AssetLoader::getInstance()
 {
@@ -63,6 +64,7 @@ std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& f
 std::shared_ptr<Texture> AssetLoader::loadTexure(const std::string& filename)
 {
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+	texture->name = basename(boost::filesystem::path(filename).filename().string());
 	texture->data = stbi_load(filename.c_str(), &texture->width, &texture->height, &texture->channels, STBI_rgb_alpha);
 
 	if (!texture->data)
@@ -126,8 +128,23 @@ void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const st
 void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
 {
 	std::shared_ptr<StaticMesh> mesh = staticMeshComponent->m_mesh;
-	std::vector<std::shared_ptr<Material>>& materials = staticMeshComponent->m_materials;
-	std::vector<uint32_t>& indexCounts = staticMeshComponent->m_indexCounts;
+	staticMeshComponent->m_sections.push_back(Section{});
+	Section& section = staticMeshComponent->m_sections.back();
+
+	// name
+	section.name = assMesh->mName.C_Str();
+
+	// indices
+	uint32_t baseIndex = static_cast<uint32_t>(mesh->vertices.size());
+	for (uint32_t i = 0; i < assMesh->mNumFaces; ++i)
+	{
+		const aiFace& face = assMesh->mFaces[i];
+		for (uint32_t j = 0; j < face.mNumIndices; ++j)
+		{
+			mesh->indices.push_back(baseIndex + face.mIndices[j]);
+		}
+	}
+	section.indexCount = static_cast<uint32_t>(mesh->indices.size());
 
 	// vertices
 	for (uint32_t i = 0; i < assMesh->mNumVertices; ++i)
@@ -139,18 +156,6 @@ void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const st
 
 		mesh->vertices.push_back(vertex);
 	}
-
-	// indices
-	uint32_t baseIndex = static_cast<uint32_t>(mesh->indices.size());
-	for (uint32_t i = 0; i < assMesh->mNumFaces; ++i)
-	{
-		const aiFace& face = assMesh->mFaces[i];
-		for (uint32_t j = 0; j < face.mNumIndices; ++j)
-		{
-			mesh->indices.push_back(baseIndex + face.mIndices[j]);
-		}
-	}
-	indexCounts.push_back(static_cast<uint32_t>(mesh->indices.size()));
 
 	// materials
 	std::shared_ptr<Material> material = std::make_shared<Material>();
@@ -167,9 +172,16 @@ void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const st
 		material->baseTex = loadTexure(baseTexFilename);
 	}
 	// 如果贴图不存在，使用默认贴图
-	if (!material->baseTex->data)
+	if (!material->baseTex)
 	{
 		material->baseTex = loadTexure("asset/texture/default_texture.jpg");
 	}
-	materials.push_back(material);
+	section.material = material;
+}
+
+std::string AssetLoader::basename(const std::string& filename)
+{
+	std::vector<std::string> strs;
+	boost::split(strs, filename, boost::is_any_of("."));
+	return strs[0];
 }

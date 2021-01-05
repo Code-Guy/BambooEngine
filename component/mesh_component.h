@@ -5,11 +5,17 @@
 #include "mesh.h"
 #include "rendering/batch_resource.h"
 
+struct Section
+{
+	std::string name;
+	std::shared_ptr<Material> material;
+	uint32_t indexCount;
+};
+
 class MeshComponent : public BaseComponent
 {
 public:
 	virtual void tick(float deltaTime) override;
 
-	std::vector<std::shared_ptr<Material>> m_materials;
-	std::vector<uint32_t> m_indexCounts;
+	std::vector<Section> m_sections;
 };

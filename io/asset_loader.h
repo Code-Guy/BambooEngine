@@ -22,4 +22,6 @@ private:
 
 	void processNode(struct aiNode* assNode, const struct aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent);
 	void processMesh(struct aiMesh* assMesh, const struct aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent);
+
+	std::string basename(const std::string& filename);
 };

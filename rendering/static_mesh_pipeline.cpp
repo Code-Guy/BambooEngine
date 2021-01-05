@@ -4,8 +4,9 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 {
 	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource;
 	uint32_t sectionCount = static_cast<uint32_t>(batch->indexCounts.size());
+	uint32_t descriptorSetSize = SWAPCHAIN_IMAGE_NUM * sectionCount;
 
-	std::vector<VkDescriptorSetLayout> layouts(SWAPCHAIN_IMAGE_NUM, m_descriptorSetLayout);
+	std::vector<VkDescriptorSetLayout> layouts(descriptorSetSize, m_descriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -13,7 +14,7 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
 	allocInfo.pSetLayouts = layouts.data();
 
-	batch->descriptorSets.resize(SWAPCHAIN_IMAGE_NUM * sectionCount);
+	batch->descriptorSets.resize(descriptorSetSize);
 	if (vkAllocateDescriptorSets(m_backend->getDevice(), &allocInfo, batch->descriptorSets.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor sets!");
@@ -28,7 +29,7 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 			std::vector<VkWriteDescriptorSet> descriptorWrites(2, VkWriteDescriptorSet{});
 
 			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = batch->uniformBuffers[index].buffer;
+			bufferInfo.buffer = batch->uniformBuffers[i].buffer;
 			bufferInfo.offset = 0;
 			bufferInfo.range = sizeof(UBO);
 

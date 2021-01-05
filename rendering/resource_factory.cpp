@@ -23,20 +23,23 @@ void ResourceFactory::destroy()
 StaticMeshBatchResource* ResourceFactory::createBatchResource(std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
 {
 	StaticMeshBatchResource* batchResource = new StaticMeshBatchResource;
+	const std::vector<Section>& sections = staticMeshComponent->m_sections;
 
 	createVertexBuffer(staticMeshComponent->m_mesh->vertices, batchResource->vertexBuffer);
-
-	batchResource->indexCounts = staticMeshComponent->m_indexCounts;
 	createIndexBuffer(staticMeshComponent->m_mesh->indices, batchResource->indexBuffer);
 
-	batchResource->baseIVSs.resize(staticMeshComponent->m_materials.size());
-	for (size_t i = 0; i < staticMeshComponent->m_materials.size(); ++i)
+	batchResource->indexCounts.resize(sections.size());
+	batchResource->baseIVSs.resize(sections.size());
+
+	for (size_t i = 0; i < sections.size(); ++i)
 	{
-		std::shared_ptr<Material>& material = staticMeshComponent->m_materials[i];
-		VmaImageViewSampler baseIVS = batchResource->baseIVSs[i];
+		const Section& section = sections[i];
+		VmaImageViewSampler& baseIVS = batchResource->baseIVSs[i];
+
+		batchResource->indexCounts[i] = section.indexCount;
 
 		VmaImage& vmaImage = baseIVS.vmaImage;
-		createTextureImage(material->baseTex, vmaImage);
+		createTextureImage(section.material->baseTex, vmaImage);
 		baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
 		baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
 	}

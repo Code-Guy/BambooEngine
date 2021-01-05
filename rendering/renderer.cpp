@@ -270,6 +270,7 @@ void Renderer::cleanupBatchResource()
 	for (BatchResource* batchResource : m_batchResources)
 	{
 		batchResource->destroy(m_backend->getDevice(), m_backend->getAllocator());
+		delete batchResource;
 	}
 }
 
@@ -325,27 +326,28 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	for (size_t j = 0; j < m_batchResources.size(); ++j)
+	for (size_t i = 0; i < m_batchResources.size(); ++i)
 	{
-		BatchResource* batchResource = m_batchResources[j];
+		BatchResource* batchResource = m_batchResources[i];
 
 		VkBuffer vertexBuffers[] = { batchResource->vertexBuffer.buffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		updatePushConstants(commandBuffer, j);
+		updatePushConstants(commandBuffer, i);
 
 		std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
+		size_t sectionCount = indexCounts.size();
 		uint32_t indexOffset = 0;
-		for (size_t k = 0; k < indexCounts.size(); ++k)
+		for (size_t j = 0; j < sectionCount; ++j)
 		{
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_staticMeshPipeline.getPipelineLayout(), 
-				0, 1, &batchResource->descriptorSets[imageIndex * indexCounts.size() + k], 0, nullptr);
+				0, 1, &batchResource->descriptorSets[imageIndex * sectionCount + j], 0, nullptr);
 
-			uint32_t indexCount = indexCounts[k] - indexOffset;
+			uint32_t indexCount = indexCounts[j] - indexOffset;
 			vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
-			indexOffset = indexCount;
+			indexOffset = indexCounts[j];
 		}
 	}
 
@@ -374,6 +376,8 @@ void Renderer::updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIn
 
 	VPCO vpco{};
 	glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[0]);
+	modelMat = glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
 	vpco.mvp = m_camera->getViewPerspectiveMatrix();
 	vpco.mvp *= modelMat;
 
