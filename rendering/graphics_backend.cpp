@@ -36,8 +36,6 @@ void GraphicsBackend::init(uint32_t width, uint32_t height)
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createVmaAllocator();
-
-	onFramebufferResize(m_window, width, height);
 }
 
 void GraphicsBackend::destroy()

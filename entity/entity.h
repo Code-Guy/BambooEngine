@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <map>
 #include <string>
+#include <memory>
 
 class Entity
 {
@@ -12,7 +13,11 @@ public:
 	Entity();
 	virtual ~Entity();
 
+	virtual void pre();
+	virtual void begin();
 	virtual void tick(float deltaTime);
+	virtual void end();
+	virtual void post();
 
 protected:
 	void registerComponent(std::string name, Component* component);

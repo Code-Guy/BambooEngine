@@ -4,13 +4,12 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <chrono>
+#include <map>
 
 #include "swapchain.h"
 #include "render_pass.h"
 #include "framebuffer.h"
 #include "static_mesh_pipeline.h"
-#include "batch_resource.h"
 
 class Renderer
 {
@@ -19,8 +18,9 @@ public:
 	void render();
 	void destroy();
 
-	void setBatchResources(std::vector<BatchResource*> batchResources);
 	void onFramebufferResized() { m_framebufferResized = true; }
+
+	std::shared_ptr<Pipeline> getPipeline(EPipelineType pipelineType) { return m_pipelines[pipelineType]; }
 
 private:
 	void createCommandPool();
@@ -32,8 +32,6 @@ private:
 
 	void recreateSwapchain();
 	void cleanupSwapchain();
-
-	void cleanupBatchResource();
 
 	void updateCommandBuffer(uint32_t imageIndex);
 
@@ -49,7 +47,7 @@ private:
 	Swapchain m_swapchain; // 交换链对象
 	RenderPass m_renderPass; // 渲染批次对象
 	std::vector<Framebufer> m_swapchainFramebuffers; // 帧缓存对象列表
-	StaticMeshPipeline m_staticMeshPipeline; // 渲染流水线对象
+	std::map<EPipelineType, std::shared_ptr<Pipeline>> m_pipelines; // 渲染流水线对象字典
 
 	const size_t MAX_FRAMES_IN_FLIGHT = 2;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
@@ -59,5 +57,4 @@ private:
 	size_t m_currentFrame = 0;
 
 	bool m_framebufferResized;
-	std::vector<BatchResource*> m_batchResources;
 };

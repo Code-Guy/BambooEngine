@@ -1,28 +1,26 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <set>
 
 #include "graphics_backend.h"
 #include "io/asset_loader.h"
 #include "resource_factory.h"
 
-#define SWAPCHAIN_IMAGE_NUM 3
-
 class Pipeline
 {
 public:
-	void init(std::shared_ptr<GraphicsBackend>& backend, VkRenderPass renderPass);
+	void init(std::shared_ptr<GraphicsBackend> backend, VkRenderPass renderPass);
 	void destroy();
 
 	VkPipeline get() { return m_pipeline; }
-
-	VkDescriptorSetLayout getDescriptorSetLayout() { return m_descriptorSetLayout; }
-	VkDescriptorPool getDescriptorPool() { return m_descriptorPool; }
 	VkPipelineLayout getPipelineLayout() { return m_pipelineLayout; }
 
-	void createUniformBuffers(BatchResource* batchResource, VkDeviceSize bufferSize);
-	virtual void createDescriptorSets(BatchResource* batchResource) = 0;
-	virtual void pushConstants(VkCommandBuffer commandBuffer, BatchResource* batchResource) = 0;
+	std::set<std::shared_ptr<BatchResource>>& getBatchResources() { return m_batchResources; }
+	void registerBatchResource(std::shared_ptr<BatchResource> batchResource);
+	void unregisterBatchResource(std::shared_ptr<BatchResource> batchResource);
+
+	virtual void pushConstants(VkCommandBuffer commandBuffer, std::shared_ptr<BatchResource> batchResource) = 0;
 
 protected:
 	virtual uint32_t getMaxBatchNum() = 0;
@@ -32,7 +30,9 @@ protected:
 	virtual VkPipelineVertexInputStateCreateInfo createVertexInputState() = 0;
 	virtual std::vector<VkPushConstantRange> createPushConstantRanges() = 0;
 
-	std::shared_ptr<GraphicsBackend>& m_backend;
+	virtual void createDescriptorSets(std::shared_ptr<BatchResource> batchResource) = 0;
+
+	std::shared_ptr<GraphicsBackend> m_backend;
 	VkRenderPass m_renderPass;
 
 	VkDescriptorSetLayout m_descriptorSetLayout;
@@ -47,4 +47,6 @@ protected:
 
 private:
 	void createPipeline();
+
+	std::set<std::shared_ptr<BatchResource>> m_batchResources;
 };

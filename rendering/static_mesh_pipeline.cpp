@@ -1,8 +1,8 @@
 #include "static_mesh_pipeline.h"
 
-void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
+void StaticMeshPipeline::createDescriptorSets(std::shared_ptr<BatchResource> batchResource)
 {
-	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource;
+	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource.get();
 	uint32_t sectionCount = static_cast<uint32_t>(batch->indexCounts.size());
 	uint32_t descriptorSetSize = SWAPCHAIN_IMAGE_NUM * sectionCount;
 
@@ -59,9 +59,9 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 	}
 }
 
-void StaticMeshPipeline::pushConstants(VkCommandBuffer commandBuffer, BatchResource* batchResource)
+void StaticMeshPipeline::pushConstants(VkCommandBuffer commandBuffer, std::shared_ptr<BatchResource> batchResource)
 {
-	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource;
+	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource.get();
 
 	const void* pcos[] = { &batch->vpco, &batch->fpco };
 	for (size_t i = 0; i < m_pushConstantRanges.size(); ++i)

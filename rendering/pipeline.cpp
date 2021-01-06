@@ -1,6 +1,6 @@
 #include "pipeline.h"
 
-void Pipeline::init(std::shared_ptr<GraphicsBackend>& backend, VkRenderPass renderPass)
+void Pipeline::init(std::shared_ptr<GraphicsBackend> backend, VkRenderPass renderPass)
 {
 	m_backend = backend;
 	m_renderPass = renderPass;
@@ -18,16 +18,15 @@ void Pipeline::destroy()
 	vkDestroyPipelineLayout(m_backend->getDevice(), m_pipelineLayout, nullptr);
 }
 
-void Pipeline::createUniformBuffers(BatchResource* batchResource, VkDeviceSize bufferSize)
+void Pipeline::registerBatchResource(std::shared_ptr<BatchResource> batchResource)
 {
-	batchResource->uniformBuffers.resize(SWAPCHAIN_IMAGE_NUM);
-	for (size_t i = 0; i < SWAPCHAIN_IMAGE_NUM; ++i)
-	{
-		ResourceFactory::getInstance().createBuffer(bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VMA_MEMORY_USAGE_CPU_ONLY,
-			batchResource->uniformBuffers[i]);
-	}
+	createDescriptorSets(batchResource);
+	m_batchResources.insert(batchResource);
+}
+
+void Pipeline::unregisterBatchResource(std::shared_ptr<BatchResource> batchResource)
+{
+	m_batchResources.erase(batchResource);
 }
 
 void Pipeline::createPipeline()

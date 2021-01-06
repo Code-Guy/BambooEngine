@@ -179,6 +179,9 @@
     <ClInclude Include="core\camera.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\engine_type.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\bamboo.ico">

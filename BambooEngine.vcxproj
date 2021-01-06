@@ -192,6 +192,7 @@
     <ClInclude Include="config\config_manager.h" />
     <ClInclude Include="core\camera.h" />
     <ClInclude Include="core\engine.h" />
+    <ClInclude Include="core\engine_type.h" />
     <ClInclude Include="core\scene.h" />
     <ClInclude Include="entity\entity.h" />
     <ClInclude Include="entity\static_mesh_entity.h" />

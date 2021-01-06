@@ -15,7 +15,13 @@ struct Section
 class MeshComponent : public Component
 {
 public:
-	virtual void tick(float deltaTime) override;
+	std::vector<Section>& getSections() { return m_sections; }
+	std::string getName() { return m_name; }
+	void setName(const std::string& name) { m_name = name; }
 
+protected:
+	std::string m_name;
 	std::vector<Section> m_sections;
+
+	std::shared_ptr<BatchResource> m_batchResource;
 };

@@ -10,7 +10,10 @@ void Renderer::init(std::shared_ptr<GraphicsBackend>& backend)
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	m_renderPass.init(backend, m_swapchain.getFormat(), m_depthFormat);
-	m_staticMeshPipeline.init(backend, m_renderPass.get());
+
+	auto staticMeshPipeline = std::make_shared<StaticMeshPipeline>();
+	staticMeshPipeline->init(backend, m_renderPass.get());
+	m_pipelines[EPipelineType::StaticMesh] = staticMeshPipeline;
 
 	createCommandPool();
 	createMsaaResources();
@@ -104,9 +107,11 @@ void Renderer::render()
 void Renderer::destroy()
 {
 	cleanupSwapchain();
-	cleanupBatchResource();
 
-	m_staticMeshPipeline.destroy();
+	for (const auto& iter : m_pipelines)
+	{
+		iter.second->destroy();
+	}
 	m_renderPass.destroy();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
@@ -117,16 +122,6 @@ void Renderer::destroy()
 	}
 
 	vkDestroyCommandPool(m_backend->getDevice(), m_commandPool, nullptr);
-}
-
-void Renderer::setBatchResources(std::vector<BatchResource*> batchResources)
-{
-	m_batchResources = batchResources;
-	for (BatchResource* batchResource : m_batchResources)
-	{
-		m_staticMeshPipeline.createUniformBuffers(batchResource, sizeof(UBO));
-		m_staticMeshPipeline.createDescriptorSets(batchResource);
-	}
 }
 
 void Renderer::createCommandPool()
@@ -257,15 +252,6 @@ void Renderer::cleanupSwapchain()
 	m_swapchain.destroy();
 }
 
-void Renderer::cleanupBatchResource()
-{
-	for (BatchResource* batchResource : m_batchResources)
-	{
-		batchResource->destroy(m_backend->getDevice(), m_backend->getAllocator());
-		delete batchResource;
-	}
-}
-
 void Renderer::updateCommandBuffer(uint32_t imageIndex)
 {
 	VkCommandBuffer commandBuffer = m_commandBuffers[imageIndex];
@@ -313,33 +299,38 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_staticMeshPipeline.get());
-
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	for (size_t i = 0; i < m_batchResources.size(); ++i)
+	for (const auto& iter : m_pipelines)
 	{
-		BatchResource* batchResource = m_batchResources[i];
+		auto& pipeline = iter.second;
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->get());
 
-		VkBuffer vertexBuffers[] = { batchResource->vertexBuffer.buffer };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-		m_staticMeshPipeline.pushConstants(commandBuffer, batchResource);
-
-		std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
-		size_t sectionCount = indexCounts.size();
-		uint32_t indexOffset = 0;
-		for (size_t j = 0; j < sectionCount; ++j)
+		auto& batchResources = pipeline->getBatchResources();
+		for (auto iter = batchResources.begin(); iter != batchResources.end(); ++iter)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_staticMeshPipeline.getPipelineLayout(), 
-				0, 1, &batchResource->descriptorSets[imageIndex * sectionCount + j], 0, nullptr);
+			auto& batchResource = *iter;
 
-			uint32_t indexCount = indexCounts[j] - indexOffset;
-			vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
-			indexOffset = indexCounts[j];
+			VkBuffer vertexBuffers[] = { batchResource->vertexBuffer.buffer };
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+			pipeline->pushConstants(commandBuffer, batchResource);
+
+			std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
+			size_t sectionCount = indexCounts.size();
+			uint32_t indexOffset = 0;
+			for (size_t j = 0; j < sectionCount; ++j)
+			{
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayout(),
+					0, 1, &batchResource->descriptorSets[imageIndex * sectionCount + j], 0, nullptr);
+
+				uint32_t indexCount = indexCounts[j] - indexOffset;
+				vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
+				indexOffset = indexCounts[j];
+			}
 		}
 	}
 

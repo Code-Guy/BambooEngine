@@ -54,7 +54,8 @@ std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& f
 	}
 
 	staticMeshComponent = std::make_shared<StaticMeshComponent>();
-	staticMeshComponent->m_mesh = std::make_shared<StaticMesh>();
+	staticMeshComponent->setName(basename(filename));
+	staticMeshComponent->setMesh(std::make_shared<StaticMesh>());
 
 	processNode(assScene->mRootNode, assScene, filename, staticMeshComponent);
 
@@ -64,7 +65,7 @@ std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& f
 std::shared_ptr<Texture> AssetLoader::loadTexure(const std::string& filename)
 {
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
-	texture->name = basename(boost::filesystem::path(filename).filename().string());
+	texture->name = basename(filename);
 	texture->data = stbi_load(filename.c_str(), &texture->width, &texture->height, &texture->channels, STBI_rgb_alpha);
 
 	if (!texture->data)
@@ -127,9 +128,9 @@ void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const st
 
 void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
 {
-	std::shared_ptr<StaticMesh> mesh = staticMeshComponent->m_mesh;
-	staticMeshComponent->m_sections.push_back(Section{});
-	Section& section = staticMeshComponent->m_sections.back();
+	std::shared_ptr<StaticMesh> mesh = staticMeshComponent->getMesh();
+	staticMeshComponent->getSections().push_back(Section{});
+	Section& section = staticMeshComponent->getSections().back();
 
 	// name
 	section.name = assMesh->mName.C_Str();
@@ -181,7 +182,8 @@ void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const st
 
 std::string AssetLoader::basename(const std::string& filename)
 {
+	std::string name = boost::filesystem::path(filename).filename().string();
 	std::vector<std::string> strs;
-	boost::split(strs, filename, boost::is_any_of("."));
+	boost::split(strs, name, boost::is_any_of("."));
 	return strs[0];
 }

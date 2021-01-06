@@ -1,5 +1,6 @@
 #include "resource_factory.h"
 #include "graphics_backend.h"
+#include "renderer.h"
 
 #include <stb_image/stb_image.h>
 
@@ -9,9 +10,12 @@ ResourceFactory& ResourceFactory::getInstance()
 	return factory;
 }
 
-void ResourceFactory::init(std::shared_ptr<GraphicsBackend>& backend)
+void ResourceFactory::init(std::shared_ptr<GraphicsBackend>& backend, std::shared_ptr<class Renderer> renderer)
 {
 	m_backend = backend;
+	m_renderer = renderer;
+
+	// 创建短时指令池
 	createInstantCommandPool();
 }
 
@@ -20,31 +24,15 @@ void ResourceFactory::destroy()
 	vkDestroyCommandPool(m_backend->getDevice(), m_instantCommandPool, nullptr);
 }
 
-StaticMeshBatchResource* ResourceFactory::createBatchResource(std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
+void ResourceFactory::registerBatchResource(std::shared_ptr<BatchResource> batchResource)
 {
-	StaticMeshBatchResource* batchResource = new StaticMeshBatchResource;
-	const std::vector<Section>& sections = staticMeshComponent->m_sections;
+	m_renderer->getPipeline(EPipelineType::StaticMesh)->registerBatchResource(batchResource);
+}
 
-	createVertexBuffer(staticMeshComponent->m_mesh->vertices, batchResource->vertexBuffer);
-	createIndexBuffer(staticMeshComponent->m_mesh->indices, batchResource->indexBuffer);
-
-	batchResource->indexCounts.resize(sections.size());
-	batchResource->baseIVSs.resize(sections.size());
-
-	for (size_t i = 0; i < sections.size(); ++i)
-	{
-		const Section& section = sections[i];
-		VmaImageViewSampler& baseIVS = batchResource->baseIVSs[i];
-
-		batchResource->indexCounts[i] = section.indexCount;
-
-		VmaImage& vmaImage = baseIVS.vmaImage;
-		createTextureImage(section.material->baseTex, vmaImage);
-		baseIVS.view = createImageView(vmaImage.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vmaImage.mipLevels);
-		baseIVS.sampler = createSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, vmaImage.mipLevels);
-	}
-
-	return batchResource;
+void ResourceFactory::unregisterBatchResource(std::shared_ptr<BatchResource> batchResource)
+{
+	batchResource->destroy(m_backend->getDevice(), m_backend->getAllocator());
+	m_renderer->getPipeline(EPipelineType::StaticMesh)->unregisterBatchResource(batchResource);
 }
 
 void ResourceFactory::createVertexBuffer(const std::vector<StaticVertex>& vertices, VmaBuffer& vertexBuffer)

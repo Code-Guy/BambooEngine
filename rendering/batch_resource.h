@@ -3,8 +3,9 @@
 #include <vulkan/vulkan.h>
 #include <vulkan_memory_allocator/vk_mem_alloc.h>
 #include <glm/glm.hpp>
-
 #include <vector>
+
+#include "core/engine_type.h"
 
 struct UBO
 {
@@ -80,8 +81,6 @@ struct BatchResource
 	std::vector<VmaBuffer> uniformBuffers;
 	std::vector<VkDescriptorSet> descriptorSets;
 
-	glm::mat4 modelMat;
-
 	virtual void destroy(VkDevice device, VmaAllocator allocator)
 	{
 		for (VmaBuffer& uniformBuffer : uniformBuffers)
@@ -104,10 +103,10 @@ struct StaticMeshBatchResource : public BatchResource
 
 	virtual void destroy(VkDevice device, VmaAllocator allocator)
 	{
-		BatchResource::destroy(device, allocator);
 		for (VmaImageViewSampler& baseIVS : baseIVSs)
 		{
 			baseIVS.destroy(device, allocator);
+			BatchResource::destroy(device, allocator);
 		}
 	}
 };

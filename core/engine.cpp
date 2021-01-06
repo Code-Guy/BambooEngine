@@ -6,13 +6,17 @@
 #include "input/input_manager.h"
 #include "config/config_manager.h"
 #include "scene.h"
+#include "entity/static_mesh_entity.h"
+
+#define WIDTH 1280
+#define HEIGHT 720
 
 void Engine::init()
 {
 	// 初始化图形后端和渲染器
 	m_backend = std::make_shared<GraphicsBackend>();
 	m_backend->setOnFramebufferResized(std::bind(&Engine::onViewportResized, this, std::placeholders::_1, std::placeholders::_2));
-	m_backend->init(1280, 720);
+	m_backend->init(WIDTH, HEIGHT);
 
 	// 初始化配置管理器
 	ConfigManager::getInstance().init();
@@ -20,19 +24,21 @@ void Engine::init()
 	// 初始化着色器管理器
 	ShaderManager::getInstance().init();
 
-	// 初始化渲染资源工厂
-	ResourceFactory::getInstance().init(m_backend);
-
-	// 初始化输入管理器
-	InputManager::getInstance().init(m_backend->getWindow());
-
 	// 初始化渲染器
 	m_renderer = std::make_shared<Renderer>();
 	m_renderer->init(m_backend);
 
+	// 初始化渲染资源工厂
+	ResourceFactory::getInstance().init(m_backend, m_renderer);
+
+	// 初始化输入管理器
+	InputManager::getInstance().init(m_backend->getWindow());
+
 	// 初始化场景
 	m_scene = std::make_shared<class Scene>();
+	m_scene->init(WIDTH, HEIGHT);
 
+	// 加载模型资源，生成组件
 	std::vector<std::string> modelNames = {
 		//"asset/model/ground/ground.fbx",
 		//"asset/model/dinosaur/dinosaur.fbx",
@@ -42,18 +48,15 @@ void Engine::init()
 		"asset/model/sponza/sponza.fbx",
 	};
 
-	std::vector<BatchResource*> batchResources;
 	for (const std::string& modelName : modelNames)
 	{
-		// 加载模型资源，生成组件
 		std::shared_ptr<StaticMeshComponent> staticMeshComponent = AssetLoader::getInstance().loadModel(modelName);
+		std::shared_ptr<StaticMeshEntity> staticMeshEntity = std::make_shared<StaticMeshEntity>();
+		staticMeshEntity->setStaticMeshComponent(staticMeshComponent);
 
-		// 通过组件生成渲染资源
-		batchResources.push_back(ResourceFactory::getInstance().createBatchResource(staticMeshComponent));
+		// 将entity记录到scene中
+		m_scene->registerEntity(staticMeshComponent->getName(), staticMeshEntity);
 	}
-
-	// 设置渲染器渲染资源
-	m_renderer->setBatchResources(batchResources);
 }
 
 void Engine::run()
@@ -80,6 +83,7 @@ void Engine::destroy()
 	ShaderManager::getInstance().destroy();
 	ConfigManager::getInstance().destroy();
 
+	m_scene->destroy();
 	m_renderer->destroy();
 	m_backend->destroy();
 }
@@ -99,5 +103,6 @@ void Engine::evaluateTime()
 
 void Engine::onViewportResized(uint32_t width, uint32_t height)
 {
-	m_scene->onViewportSize()
+	m_renderer->onFramebufferResized();
+	m_scene->onViewportSize(width, height);
 }

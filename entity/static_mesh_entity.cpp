@@ -2,17 +2,22 @@
 
 StaticMeshEntity::StaticMeshEntity()
 {
-	m_staticMeshComponent = std::make_shared<StaticMeshComponent>();
-	registerComponent("static_mesh", m_staticMeshComponent.get());
+	
 }
 
 StaticMeshEntity::~StaticMeshEntity()
 {
-
+	
 }
 
 void StaticMeshEntity::tick(float deltaTime)
 {
 	Entity::tick(deltaTime);
 
+}
+
+void StaticMeshEntity::setStaticMeshComponent(std::shared_ptr<StaticMeshComponent> staticMeshComponent)
+{
+	m_staticMeshComponent = staticMeshComponent;
+	registerComponent("static_mesh", m_staticMeshComponent.get());
 }

@@ -8,13 +8,13 @@
 class Scene
 {
 public:
-	Scene();
-	~Scene();
+	void init(uint32_t width, uint32_t height);
+	void destroy();
 
 	void tick(float deltaTime);
 
-	void addEntity(const std::string& name, std::shared_ptr<Entity>& entity);
-	void removeEntity(const std::string& name);
+	void registerEntity(const std::string& name, std::shared_ptr<Entity> entity);
+	void unregisterEntity(const std::string& name);
 	std::shared_ptr<Entity> getEntity(const std::string& name);
 	std::map<std::string, std::shared_ptr<Entity>>& getEntities();
 
