@@ -9,9 +9,9 @@ ResourceFactory& ResourceFactory::getInstance()
 	return factory;
 }
 
-void ResourceFactory::init(class GraphicsBackend* graphicsBackend)
+void ResourceFactory::init(std::shared_ptr<GraphicsBackend>& backend)
 {
-	m_backend = graphicsBackend;
+	m_backend = backend;
 	createInstantCommandPool();
 }
 

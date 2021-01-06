@@ -10,6 +10,7 @@
 #include <set>
 #include <iostream>
 #include <optional>
+#include <functional>
 
 struct QueueFamilyIndices
 {
@@ -53,11 +54,9 @@ public:
 	SwapChainSupportDetails getSwapChainSupport();
 	const QueueFamilyIndices& getQueueFamilyIndices() { return m_queueFamilyIndices; }
 	VkFormat getSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-
 	VkSampleCountFlagBits getMsaaSamples() { return m_msaaSamples; }
 
-	bool getFramebufferResized() { return m_framebufferResized; }
-	void setFramebufferResized(bool bFlag) { m_framebufferResized = bFlag; }
+	void setOnFramebufferResized(std::function<void(uint32_t, uint32_t)> onFramebufferResized) { m_onFramebufferResized = onFramebufferResized; }
 
 private:
 	void initWindow();
@@ -101,7 +100,7 @@ private:
 
 	uint32_t m_width;
 	uint32_t m_height;
-	bool m_framebufferResized;
+	std::function<void(uint32_t, uint32_t)> m_onFramebufferResized;
 
 	// µ÷ÊÔ²ãÁÐ±í
 	const std::vector<const char*> m_validationLayers =

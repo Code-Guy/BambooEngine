@@ -36,6 +36,8 @@ void GraphicsBackend::init(uint32_t width, uint32_t height)
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createVmaAllocator();
+
+	onFramebufferResize(m_window, width, height);
 }
 
 void GraphicsBackend::destroy()
@@ -444,7 +446,10 @@ VkSampleCountFlagBits GraphicsBackend::queryMaxSampleCount()
 void GraphicsBackend::onFramebufferResize(GLFWwindow* window, int width, int height)
 {
 	GraphicsBackend* self = reinterpret_cast<GraphicsBackend*>(glfwGetWindowUserPointer(window));
-	self->m_framebufferResized = true;
+	if (self->m_onFramebufferResized)
+	{
+		self->m_onFramebufferResized(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+	}
 }
 
 // 错误消息屏蔽列表

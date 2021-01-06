@@ -1,29 +1,29 @@
 #pragma once
 
-#include "component/base_component.h"
+#include "component/component.h"
 
 #include <glm/glm.hpp>
 #include <map>
 #include <string>
 
-class BaseEntity
+class Entity
 {
 public:
-	BaseEntity();
-	virtual ~BaseEntity();
+	Entity();
+	virtual ~Entity();
 
 	virtual void tick(float deltaTime);
 
 protected:
-	void registerComponent(std::string name, BaseComponent* component);
+	void registerComponent(std::string name, Component* component);
 	void unregisterComponent(std::string name);
 
 private:
-	BaseEntity* m_parent;
+	std::weak_ptr<Entity> m_parent;
 
 	glm::vec3 m_position;
 	glm::vec3 m_rotation;
 	glm::vec3 m_scale;
 
-	std::map<std::string, BaseComponent*> m_componentMap;
+	std::map<std::string, Component*> m_componentMap;
 };

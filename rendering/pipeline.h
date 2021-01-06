@@ -11,7 +11,7 @@
 class Pipeline
 {
 public:
-	void init(GraphicsBackend* backend, VkRenderPass renderPass);
+	void init(std::shared_ptr<GraphicsBackend>& backend, VkRenderPass renderPass);
 	void destroy();
 
 	VkPipeline get() { return m_pipeline; }
@@ -20,10 +20,9 @@ public:
 	VkDescriptorPool getDescriptorPool() { return m_descriptorPool; }
 	VkPipelineLayout getPipelineLayout() { return m_pipelineLayout; }
 
-	const std::vector<VkPushConstantRange>& getPushConstantRanges() { return m_pushConstantRanges; }
-
 	void createUniformBuffers(BatchResource* batchResource, VkDeviceSize bufferSize);
 	virtual void createDescriptorSets(BatchResource* batchResource) = 0;
+	virtual void pushConstants(VkCommandBuffer commandBuffer, BatchResource* batchResource) = 0;
 
 protected:
 	virtual uint32_t getMaxBatchNum() = 0;
@@ -33,7 +32,7 @@ protected:
 	virtual VkPipelineVertexInputStateCreateInfo createVertexInputState() = 0;
 	virtual std::vector<VkPushConstantRange> createPushConstantRanges() = 0;
 
-	GraphicsBackend* m_backend;
+	std::shared_ptr<GraphicsBackend>& m_backend;
 	VkRenderPass m_renderPass;
 
 	VkDescriptorSetLayout m_descriptorSetLayout;

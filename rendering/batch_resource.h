@@ -80,6 +80,8 @@ struct BatchResource
 	std::vector<VmaBuffer> uniformBuffers;
 	std::vector<VkDescriptorSet> descriptorSets;
 
+	glm::mat4 modelMat;
+
 	virtual void destroy(VkDevice device, VmaAllocator allocator)
 	{
 		for (VmaBuffer& uniformBuffer : uniformBuffers)
@@ -95,6 +97,10 @@ struct BatchResource
 struct StaticMeshBatchResource : public BatchResource
 {
 	std::vector<VmaImageViewSampler> baseIVSs;
+
+	// push constants
+	VPCO vpco;
+	FPCO fpco;
 
 	virtual void destroy(VkDevice device, VmaAllocator allocator)
 	{

@@ -1,22 +1,16 @@
 #include "renderer.h"
-#include "entity/camera.h"
 
-#define MAX_DESC_NUM 100
-
-void Renderer::init(GraphicsBackend* graphicBackend, Camera* camera)
+void Renderer::init(std::shared_ptr<GraphicsBackend>& backend)
 {
-	m_backend = graphicBackend;
-	m_camera = camera;
+	m_backend = backend;
 
 	m_swapchain.init(m_backend);
-	m_camera->setAspect(m_swapchain.getExtent().width / static_cast<float>(m_swapchain.getExtent().height));
-
 	m_depthFormat = m_backend->getSupportedFormat(
 		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-	m_renderPass.init(graphicBackend, m_swapchain.getFormat(), m_depthFormat);
-	m_staticMeshPipeline.init(graphicBackend, m_renderPass.get());
+	m_renderPass.init(backend, m_swapchain.getFormat(), m_depthFormat);
+	m_staticMeshPipeline.init(backend, m_renderPass.get());
 
 	createCommandPool();
 	createMsaaResources();
@@ -335,7 +329,7 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		updatePushConstants(commandBuffer, i);
+		m_staticMeshPipeline.pushConstants(commandBuffer, batchResource);
 
 		std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
 		size_t sectionCount = indexCounts.size();
@@ -356,40 +350,5 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to record command buffer!");
-	}
-}
-
-void Renderer::updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIndex)
-{
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-	std::vector<glm::vec3> positions = {
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(-4.0f, -4.0f, 0.0f),
-		glm::vec3(-4.0f, 4.0f, 0.0f),
-		glm::vec3(4.0f, -4.0f, 0.0f),
-		glm::vec3(4.0f, 4.0f, 0.0f)
-	};
-
-	VPCO vpco{};
-	glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), positions[0]);
-	modelMat = glm::rotate(modelMat, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	vpco.mvp = m_camera->getViewPerspectiveMatrix();
-	vpco.mvp *= modelMat;
-
-	FPCO fpco{};
-	fpco.cameraPosition = m_camera->getPosition();
-	fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
-
-	const void* pcos[] = { &vpco, &fpco };
-	const auto& pushConstantRanges = m_staticMeshPipeline.getPushConstantRanges();
-	for (size_t i = 0; i < pushConstantRanges.size(); ++i)
-	{
-		const VkPushConstantRange& pushConstantRange = pushConstantRanges[i];
-		vkCmdPushConstants(commandBuffer, m_staticMeshPipeline.getPipelineLayout(), pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pcos[i]);
 	}
 }

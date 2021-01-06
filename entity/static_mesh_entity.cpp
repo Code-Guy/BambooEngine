@@ -13,6 +13,6 @@ StaticMeshEntity::~StaticMeshEntity()
 
 void StaticMeshEntity::tick(float deltaTime)
 {
-	BaseEntity::tick(deltaTime);
+	Entity::tick(deltaTime);
 
 }

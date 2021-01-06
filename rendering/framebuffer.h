@@ -6,13 +6,13 @@
 class Framebufer
 {
 public:
-	void init(GraphicsBackend* backend, VkRenderPass renderPass, VkExtent2D extent, const std::vector<VkImageView>& attachments);
+	void init(std::shared_ptr<GraphicsBackend>& backend, VkRenderPass renderPass, VkExtent2D extent, const std::vector<VkImageView>& attachments);
 	void destroy();
 
 	VkFramebuffer get() { return m_framebuffer; }
 
 private:
-	class GraphicsBackend* m_backend;
+	std::shared_ptr<GraphicsBackend> m_backend;
 
 	VkFramebuffer m_framebuffer;
 };

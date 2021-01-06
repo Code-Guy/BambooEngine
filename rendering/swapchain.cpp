@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <boost/format.hpp>
 
-void Swapchain::init(GraphicsBackend* backend)
+void Swapchain::init(std::shared_ptr<GraphicsBackend>& backend)
 {
 	m_backend = backend;
 

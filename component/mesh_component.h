@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base_component.h"
+#include "component.h"
 #include "material.h"
 #include "mesh.h"
 #include "rendering/batch_resource.h"
@@ -12,7 +12,7 @@ struct Section
 	uint32_t indexCount;
 };
 
-class MeshComponent : public BaseComponent
+class MeshComponent : public Component
 {
 public:
 	virtual void tick(float deltaTime) override;

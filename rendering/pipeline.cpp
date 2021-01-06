@@ -1,6 +1,6 @@
 #include "pipeline.h"
 
-void Pipeline::init(GraphicsBackend* backend, VkRenderPass renderPass)
+void Pipeline::init(std::shared_ptr<GraphicsBackend>& backend, VkRenderPass renderPass)
 {
 	m_backend = backend;
 	m_renderPass = renderPass;

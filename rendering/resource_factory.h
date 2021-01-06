@@ -7,7 +7,7 @@ class ResourceFactory
 {
 public:
 	static ResourceFactory& getInstance();
-	void init(class GraphicsBackend* graphicsBackend);
+	void init(std::shared_ptr<GraphicsBackend>& backend);
 	void destroy();
 
 	StaticMeshBatchResource* createBatchResource(std::shared_ptr<StaticMeshComponent>& staticMeshComponent);
@@ -36,6 +36,6 @@ private:
 	VkCommandBuffer beginInstantCommands();
 	void endInstantCommands(VkCommandBuffer commandBuffer);
 
-	class GraphicsBackend* m_backend;
+	std::shared_ptr<GraphicsBackend> m_backend;
 	VkCommandPool m_instantCommandPool;
 };

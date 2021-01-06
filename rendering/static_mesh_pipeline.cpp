@@ -59,6 +59,18 @@ void StaticMeshPipeline::createDescriptorSets(BatchResource* batchResource)
 	}
 }
 
+void StaticMeshPipeline::pushConstants(VkCommandBuffer commandBuffer, BatchResource* batchResource)
+{
+	StaticMeshBatchResource* batch = (StaticMeshBatchResource*)batchResource;
+
+	const void* pcos[] = { &batch->vpco, &batch->fpco };
+	for (size_t i = 0; i < m_pushConstantRanges.size(); ++i)
+	{
+		const VkPushConstantRange& pushConstantRange = m_pushConstantRanges[i];
+		vkCmdPushConstants(commandBuffer, m_pipelineLayout, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pcos[i]);
+	}
+}
+
 uint32_t StaticMeshPipeline::getMaxBatchNum()
 {
 	return 32;

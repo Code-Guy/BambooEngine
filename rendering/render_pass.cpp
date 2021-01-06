@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <vector>
 
-void RenderPass::init(GraphicsBackend* backend, VkFormat colorFormat, VkFormat depthFormat)
+void RenderPass::init(std::shared_ptr<GraphicsBackend>& backend, VkFormat colorFormat, VkFormat depthFormat)
 {
 	m_backend = backend;
 

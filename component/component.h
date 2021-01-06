@@ -1,6 +1,6 @@
 #pragma once
 
-class BaseComponent
+class Component
 {
 public:
 	virtual void tick(float deltaTime);

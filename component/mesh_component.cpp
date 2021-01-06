@@ -2,6 +2,6 @@
 
 void MeshComponent::tick(float deltaTime)
 {
-	BaseComponent::tick(deltaTime);
+	Component::tick(deltaTime);
 
 }

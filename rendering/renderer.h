@@ -15,7 +15,7 @@
 class Renderer
 {
 public:
-	void init(class GraphicsBackend* graphicBackend, class Camera* camera);
+	void init(std::shared_ptr<GraphicsBackend>& backend);
 	void render();
 	void destroy();
 
@@ -35,9 +35,8 @@ private:
 	void cleanupBatchResource();
 
 	void updateCommandBuffer(uint32_t imageIndex);
-	void updatePushConstants(VkCommandBuffer commandBuffer, size_t batchIndex);
 
-	class GraphicsBackend* m_backend;
+	std::shared_ptr<GraphicsBackend> m_backend;
 	class Camera* m_camera;
 
 	VkFormat m_depthFormat;

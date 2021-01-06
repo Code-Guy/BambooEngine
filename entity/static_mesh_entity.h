@@ -1,9 +1,9 @@
 #pragma once
 
-#include "base_entity.h"
+#include "entity.h"
 #include "component/static_mesh_component.h"
 
-class StaticMeshEntity : public BaseEntity
+class StaticMeshEntity : public Entity
 {
 public:
 	StaticMeshEntity();

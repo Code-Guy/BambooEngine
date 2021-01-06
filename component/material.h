@@ -12,6 +12,14 @@ struct Texture
 	int channels;
 
 	uint8_t* data = nullptr;
+
+	~Texture()
+	{
+		if (data)
+		{
+			free(data);
+		}
+	}
 };
 
 struct Material

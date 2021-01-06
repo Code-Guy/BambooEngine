@@ -1,6 +1,6 @@
-#include "base_entity.h"
+#include "entity.h"
 
-BaseEntity::BaseEntity()
+Entity::Entity()
 {
 	m_parent = nullptr;
 
@@ -9,12 +9,12 @@ BaseEntity::BaseEntity()
 	m_scale = glm::vec3(1.0f);
 }
 
-BaseEntity::~BaseEntity()
+Entity::~Entity()
 {
 
 }
 
-void BaseEntity::tick(float deltaTime)
+void Entity::tick(float deltaTime)
 {
 	for (const auto& iter : m_componentMap)
 	{
@@ -22,12 +22,12 @@ void BaseEntity::tick(float deltaTime)
 	}
 }
 
-void BaseEntity::registerComponent(std::string name, BaseComponent* component)
+void Entity::registerComponent(std::string name, Component* component)
 {
 	m_componentMap[name] = component;
 }
 
-void BaseEntity::unregisterComponent(std::string name)
+void Entity::unregisterComponent(std::string name)
 {
 	if (m_componentMap.find(name) != m_componentMap.end())
 	{

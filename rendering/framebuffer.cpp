@@ -1,6 +1,6 @@
 #include "framebuffer.h"
 
-void Framebufer::init(GraphicsBackend* backend, VkRenderPass renderPass, VkExtent2D extent, const std::vector<VkImageView>& attachments)
+void Framebufer::init(std::shared_ptr<GraphicsBackend>& backend, VkRenderPass renderPass, VkExtent2D extent, const std::vector<VkImageView>& attachments)
 {
 	m_backend = backend;
 

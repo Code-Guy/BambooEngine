@@ -6,6 +6,7 @@ class StaticMeshPipeline : public Pipeline
 {
 public:
 	virtual void createDescriptorSets(BatchResource* batchResource);
+	virtual void pushConstants(VkCommandBuffer commandBuffer, BatchResource* batchResource);
 
 protected:
 	virtual uint32_t getMaxBatchNum();
