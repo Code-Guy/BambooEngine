@@ -88,9 +88,9 @@ void Renderer::render()
 	result = vkQueuePresentKHR(m_backend->getPresentQueue(), &presentInfo);
 
 	// 检测是否要重建交换链
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_backend->getFramebufferResized())
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
 	{
-		m_backend->setFramebufferResized(false);
+		m_framebufferResized = false;
 		recreateSwapchain();
 	}
 	else if (result != VK_SUCCESS)
@@ -238,8 +238,6 @@ void Renderer::recreateSwapchain()
 
 	// 把和交换链相关的参数设置成动态状态，可以避免重建整个图形管线
 	m_swapchain.init(m_backend);
-	m_camera->setAspect(m_swapchain.getExtent().width / static_cast<float>(m_swapchain.getExtent().height));
-
 	createMsaaResources();
 	createDepthResources();
 	createFramebuffers();

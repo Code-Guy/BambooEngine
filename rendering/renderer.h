@@ -20,6 +20,7 @@ public:
 	void destroy();
 
 	void setBatchResources(std::vector<BatchResource*> batchResources);
+	void onFramebufferResized() { m_framebufferResized = true; }
 
 private:
 	void createCommandPool();
@@ -37,10 +38,8 @@ private:
 	void updateCommandBuffer(uint32_t imageIndex);
 
 	std::shared_ptr<GraphicsBackend> m_backend;
-	class Camera* m_camera;
 
 	VkFormat m_depthFormat;
-	
 	VmaImageView m_depthImageView;
 	VmaImageView m_msaaImageView;
 
@@ -59,5 +58,6 @@ private:
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame = 0;
 
+	bool m_framebufferResized;
 	std::vector<BatchResource*> m_batchResources;
 };
