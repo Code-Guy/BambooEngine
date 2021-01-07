@@ -3,7 +3,6 @@
 #include "entity.h"
 #include "camera.h"
 #include <map>
-#include <memory>
 
 class Scene
 {
@@ -22,6 +21,8 @@ public:
 	void onViewportSize(uint32_t width, uint32_t height);
 
 private:
+	Entity m_rootEntity;
 	std::unique_ptr<Camera> m_camera;
-	entt::registry m_registry;
+
+	std::shared_ptr<entt::registry> m_registry;
 };

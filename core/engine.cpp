@@ -2,10 +2,8 @@
 #include "rendering/graphics_backend.h"
 #include "rendering/renderer.h"
 #include "rendering/shader_manager.h"
-#include "io/asset_loader.h"
 #include "input/input_manager.h"
 #include "config/config_manager.h"
-#include "utility/utility.h"
 #include "scene.h"
 
 void Engine::init()
@@ -38,24 +36,6 @@ void Engine::init()
 	// 初始化场景
 	m_scene = std::make_shared<class Scene>();
 	m_scene->init(width, height);
-
-	// 加载模型资源，生成组件
-	std::vector<std::string> modelNames = {
-		//"asset/model/ground/ground.fbx",
-		//"asset/model/dinosaur/dinosaur.fbx",
-		//"asset/model/armadillo/armadillo.fbx",
-		//"asset/model/dragon/dragon.fbx",
-		//"asset/model/ogre/ogre.fbx",
-		"asset/model/sponza/sponza.fbx",
-	};
-
-	for (const std::string& modelName : modelNames)
-	{
-		StaticMeshComponent staticMeshComponent = AssetLoader::getInstance().loadModel(modelName);
-		
-		Entity entity = m_scene->createEntity(Utility::basename(modelName));
-		entity.addComponent<StaticMeshComponent>(staticMeshComponent);
-	}
 }
 
 void Engine::run()

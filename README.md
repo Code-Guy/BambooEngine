@@ -10,6 +10,7 @@ A lightweight cross-platform game engine implemented with C++ and Vulkan.
 - boost
 - assimp
 - stb_image
+- entt
 - yaml-cpp
 - fmod
 - bullet
