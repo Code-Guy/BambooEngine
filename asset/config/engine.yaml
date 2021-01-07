@@ -1,2 +1,4 @@
 # shader compiler path
 shader_compiler_path: D:\VulkanSDK\1.2.162.0\Bin32\glslc.exe
+res_x: 1280
+res_y: 720

@@ -5,6 +5,9 @@
 #include <memory>
 #include <stdexcept>
 #include <array>
+#include <vector>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 std::string Utility::exec(const char* cmd)
 {
@@ -45,4 +48,12 @@ void Utility::replaceAll(std::string& str, const std::string& from, const std::s
 		str.replace(start_pos, from.length(), to);
 		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 	}
+}
+
+std::string Utility::basename(const std::string& filename)
+{
+	std::string name = boost::filesystem::path(filename).filename().string();
+	std::vector<std::string> strs;
+	boost::split(strs, name, boost::is_any_of("."));
+	return strs[0];
 }

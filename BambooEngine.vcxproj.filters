@@ -34,18 +34,6 @@
     <ClCompile Include="rendering\shader_manager.cpp">
       <Filter>rendering</Filter>
     </ClCompile>
-    <ClCompile Include="entity\static_mesh_entity.cpp">
-      <Filter>entity</Filter>
-    </ClCompile>
-    <ClCompile Include="component\static_mesh_component.cpp">
-      <Filter>component</Filter>
-    </ClCompile>
-    <ClCompile Include="component\mesh_component.cpp">
-      <Filter>component</Filter>
-    </ClCompile>
-    <ClCompile Include="component\skinned_mesh_component.cpp">
-      <Filter>component</Filter>
-    </ClCompile>
     <ClCompile Include="rendering\render_pass.cpp">
       <Filter>rendering</Filter>
     </ClCompile>
@@ -64,22 +52,19 @@
     <ClCompile Include="core\scene.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="component\component.cpp">
-      <Filter>component</Filter>
-    </ClCompile>
-    <ClCompile Include="entity\entity.cpp">
-      <Filter>entity</Filter>
-    </ClCompile>
     <ClCompile Include="core\camera.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\entity.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="component\component.cpp">
+      <Filter>component</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="core">
       <UniqueIdentifier>{83cff25d-64f9-4946-bb0d-2c81ef85ba2d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="entity">
-      <UniqueIdentifier>{638ce8e6-b7cf-4c5f-b164-c16ceef0883c}</UniqueIdentifier>
     </Filter>
     <Filter Include="rendering">
       <UniqueIdentifier>{175ead01-7144-4b95-84a6-c367a94e8c72}</UniqueIdentifier>
@@ -137,19 +122,7 @@
     <ClInclude Include="resource\resource.h">
       <Filter>resource</Filter>
     </ClInclude>
-    <ClInclude Include="entity\static_mesh_entity.h">
-      <Filter>entity</Filter>
-    </ClInclude>
-    <ClInclude Include="component\static_mesh_component.h">
-      <Filter>component</Filter>
-    </ClInclude>
     <ClInclude Include="component\mesh.h">
-      <Filter>component</Filter>
-    </ClInclude>
-    <ClInclude Include="component\mesh_component.h">
-      <Filter>component</Filter>
-    </ClInclude>
-    <ClInclude Include="component\skinned_mesh_component.h">
       <Filter>component</Filter>
     </ClInclude>
     <ClInclude Include="rendering\render_pass.h">
@@ -170,17 +143,17 @@
     <ClInclude Include="core\scene.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="component\component.h">
-      <Filter>component</Filter>
-    </ClInclude>
-    <ClInclude Include="entity\entity.h">
-      <Filter>entity</Filter>
-    </ClInclude>
     <ClInclude Include="core\camera.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="core\engine_type.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\entity.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="component\component.h">
+      <Filter>component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

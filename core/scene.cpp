@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "input/input_manager.h"
+#include "component/component.h"
 
 void Scene::init(uint32_t width, uint32_t height)
 {
@@ -19,58 +20,51 @@ void Scene::init(uint32_t width, uint32_t height)
 
 void Scene::destroy()
 {
-	for (const auto& iter : m_entities)
-	{
-		iter.second->post();
-	}
-	m_entities.clear();
+
+}
+
+void Scene::pre()
+{
+	m_registry.view<StaticMeshComponent>().each([](auto entity, StaticMeshComponent& staticMeshComponent) {
+		staticMeshComponent.initBatchResource();
+	});
+}
+
+void Scene::begin()
+{
+
 }
 
 void Scene::tick(float deltaTime)
 {
 	m_camera->tick(deltaTime);
 
-	for (const auto& iter : m_entities)
-	{
-		iter.second->tick(deltaTime);
-	}
+	m_registry.view<TransformComponent, StaticMeshComponent>().each([this](auto entity, TransformComponent& transformComponent, StaticMeshComponent& staticMeshComponent) {
+		staticMeshComponent.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComponent.getModelMatrix();
+		staticMeshComponent.batchResource->fpco.cameraPosition = m_camera->getPosition();
+		staticMeshComponent.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
+	});
 }
 
-void Scene::registerEntity(const std::string& name, std::shared_ptr<Entity> entity)
+void Scene::end()
 {
-	if (m_entities.find(name) != m_entities.end())
-	{
-		printf("the name %s has existed already!\n", name.c_str());
-	}
-	m_entities[name] = entity;
-	m_entities[name]->pre();
+
 }
 
-void Scene::unregisterEntity(const std::string& name)
+void Scene::post()
 {
-	auto iter = m_entities.find(name);
-	if (iter == m_entities.end())
-	{
-		printf("the name %s doesn't exist!\n", name.c_str());
-	}
-
-	iter->second->post();
-	m_entities.erase(iter);
+	m_registry.view<StaticMeshComponent>().each([](auto entity, auto& staticMeshComponent) {
+		staticMeshComponent.destroyBatchResource();
+	});
 }
 
-std::shared_ptr<Entity> Scene::getEntity(const std::string& name)
+Entity Scene::createEntity(const std::string& name)
 {
-	if (m_entities.find(name) == m_entities.end())
-	{
-		printf("the name %s doesn't exist!\n", name.c_str());
-		return nullptr;
-	}
-	return m_entities[name];
-}
+	Entity entity = Entity(m_registry, m_registry.create());
+	entity.addComponent<TagComponent>(name);
+	entity.addComponent<TransformComponent>();
 
-std::map<std::string, std::shared_ptr<Entity>>& Scene::getEntities()
-{
-	return m_entities;
+	return entity;
 }
 
 void Scene::onViewportSize(uint32_t width, uint32_t height)

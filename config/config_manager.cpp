@@ -27,3 +27,9 @@ std::string ConfigManager::getShaderCompilerPath()
 {
 	return engineConfigNode["shader_compiler_path"].as<std::string>();
 }
+
+void ConfigManager::getResolution(uint32_t& width, uint32_t& height)
+{
+	width = engineConfigNode["res_x"].as<uint32_t>();
+	height = engineConfigNode["res_y"].as<uint32_t>();
+}

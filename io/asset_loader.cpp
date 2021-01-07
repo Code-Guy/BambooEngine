@@ -1,4 +1,6 @@
 #include "asset_loader.h"
+#include "utility/utility.h"
+
 #include <fstream>
 #include <iostream>
 
@@ -11,7 +13,6 @@
 
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 
 AssetLoader& AssetLoader::getInstance()
 {
@@ -40,9 +41,9 @@ std::vector<char> AssetLoader::loadBinary(const std::string& filename)
 	return buffer;
 }
 
-std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& filename)
+StaticMeshComponent AssetLoader::loadModel(const std::string& filename)
 {
-	std::shared_ptr<StaticMeshComponent> staticMeshComponent;
+	StaticMeshComponent staticMeshComponent;
 
 	Assimp::Importer importer;
 	const aiScene* assScene = importer.ReadFile(filename.c_str(),
@@ -53,9 +54,7 @@ std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& f
 		throw std::runtime_error((boost::format("failed to load model£º%s, error: %s") % filename % importer.GetErrorString()).str());
 	}
 
-	staticMeshComponent = std::make_shared<StaticMeshComponent>();
-	staticMeshComponent->setName(basename(filename));
-	staticMeshComponent->setMesh(std::make_shared<StaticMesh>());
+	staticMeshComponent.mesh = std::make_shared<StaticMesh>();
 
 	processNode(assScene->mRootNode, assScene, filename, staticMeshComponent);
 
@@ -65,7 +64,7 @@ std::shared_ptr<StaticMeshComponent> AssetLoader::loadModel(const std::string& f
 std::shared_ptr<Texture> AssetLoader::loadTexure(const std::string& filename)
 {
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
-	texture->name = basename(filename);
+	texture->name = Utility::basename(filename);
 	texture->data = stbi_load(filename.c_str(), &texture->width, &texture->height, &texture->channels, STBI_rgb_alpha);
 
 	if (!texture->data)
@@ -112,7 +111,7 @@ std::string AssetLoader::loadString(const std::string& filename)
 	return out;
 }
 
-void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
+void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const std::string& filename, StaticMeshComponent& staticMeshComponent)
 {
 	for (uint32_t i = 0; i < assNode->mNumMeshes; ++i)
 	{
@@ -126,14 +125,11 @@ void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const st
 	}
 }
 
-void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, std::shared_ptr<StaticMeshComponent>& staticMeshComponent)
+void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, StaticMeshComponent& staticMeshComponent)
 {
-	std::shared_ptr<StaticMesh> mesh = staticMeshComponent->getMesh();
-	staticMeshComponent->getSections().push_back(Section{});
-	Section& section = staticMeshComponent->getSections().back();
-
-	// name
-	section.name = assMesh->mName.C_Str();
+	std::shared_ptr<StaticMesh> mesh = staticMeshComponent.mesh;
+	staticMeshComponent.sections.push_back(Section{});
+	Section& section = staticMeshComponent.sections.back();
 
 	// indices
 	uint32_t baseIndex = static_cast<uint32_t>(mesh->vertices.size());
@@ -178,12 +174,4 @@ void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const st
 		material->baseTex = loadTexure("asset/texture/default_texture.jpg");
 	}
 	section.material = material;
-}
-
-std::string AssetLoader::basename(const std::string& filename)
-{
-	std::string name = boost::filesystem::path(filename).filename().string();
-	std::vector<std::string> strs;
-	boost::split(strs, name, boost::is_any_of("."));
-	return strs[0];
 }

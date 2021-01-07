@@ -158,16 +158,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="component\component.cpp" />
-    <ClCompile Include="component\mesh_component.cpp" />
-    <ClCompile Include="component\skinned_mesh_component.cpp" />
-    <ClCompile Include="component\static_mesh_component.cpp" />
     <ClCompile Include="config\config_manager.cpp" />
     <ClCompile Include="core\camera.cpp" />
     <ClCompile Include="core\engine.cpp" />
+    <ClCompile Include="core\entity.cpp" />
     <ClCompile Include="core\main.cpp" />
     <ClCompile Include="core\scene.cpp" />
-    <ClCompile Include="entity\entity.cpp" />
-    <ClCompile Include="entity\static_mesh_entity.cpp" />
     <ClCompile Include="input\input_manager.cpp" />
     <ClCompile Include="io\asset_loader.cpp" />
     <ClCompile Include="rendering\framebuffer.cpp" />
@@ -186,16 +182,12 @@
     <ClInclude Include="component\component.h" />
     <ClInclude Include="component\material.h" />
     <ClInclude Include="component\mesh.h" />
-    <ClInclude Include="component\mesh_component.h" />
-    <ClInclude Include="component\skinned_mesh_component.h" />
-    <ClInclude Include="component\static_mesh_component.h" />
     <ClInclude Include="config\config_manager.h" />
     <ClInclude Include="core\camera.h" />
     <ClInclude Include="core\engine.h" />
     <ClInclude Include="core\engine_type.h" />
+    <ClInclude Include="core\entity.h" />
     <ClInclude Include="core\scene.h" />
-    <ClInclude Include="entity\entity.h" />
-    <ClInclude Include="entity\static_mesh_entity.h" />
     <ClInclude Include="input\input_manager.h" />
     <ClInclude Include="io\asset_loader.h" />
     <ClInclude Include="rendering\framebuffer.h" />

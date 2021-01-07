@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/entity.h"
+#include "entity.h"
 #include "camera.h"
 #include <map>
 #include <memory>
@@ -11,16 +11,17 @@ public:
 	void init(uint32_t width, uint32_t height);
 	void destroy();
 
+	void pre();
+	void begin();
 	void tick(float deltaTime);
+	void end();
+	void post();
 
-	void registerEntity(const std::string& name, std::shared_ptr<Entity> entity);
-	void unregisterEntity(const std::string& name);
-	std::shared_ptr<Entity> getEntity(const std::string& name);
-	std::map<std::string, std::shared_ptr<Entity>>& getEntities();
+	Entity createEntity(const std::string& name);
 
 	void onViewportSize(uint32_t width, uint32_t height);
 
 private:
 	std::unique_ptr<Camera> m_camera;
-	std::map<std::string, std::shared_ptr<Entity>> m_entities;
+	entt::registry m_registry;
 };

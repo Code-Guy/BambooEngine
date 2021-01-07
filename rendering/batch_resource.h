@@ -106,7 +106,7 @@ struct StaticMeshBatchResource : public BatchResource
 		for (VmaImageViewSampler& baseIVS : baseIVSs)
 		{
 			baseIVS.destroy(device, allocator);
-			BatchResource::destroy(device, allocator);
 		}
+		BatchResource::destroy(device, allocator);
 	}
 };
