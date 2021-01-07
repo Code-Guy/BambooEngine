@@ -1,46 +1,45 @@
 #pragma once
 
-#include <memory>
-#include <entt/entt.hpp>
+#include "scene.h"
 
 class Entity
 {
 public:
-	Entity();
-	Entity(std::shared_ptr<entt::registry> registry, entt::entity handle);
+	Entity(Scene* scene, entt::entity handle);
 	~Entity();
 
-	void attach(Entity* parent);
+	void attach(std::shared_ptr<Entity> parent);
 	void detach();
+	void destroy();
 
 	void tick();
 
 	template<typename T, typename... Args>
 	T& addComponent(Args&&... args)
 	{
-		return m_registry->emplace<T>(m_handle, std::forward<Args>(args)...);
+		return m_scene->getRegistry().emplace<T>(m_handle, std::forward<Args>(args)...);
 	}
 
 	template<typename T>
 	T& getComponent()
 	{
-		return m_registry->get<T>(m_handle);
+		return m_scene->getRegistry().get<T>(m_handle);
 	}
 
 	template<typename T>
 	bool hasComponent()
 	{
-		return m_registry->has<T>(m_handle);
+		return m_scene->getRegistry().has<T>(m_handle);
 	}
 
 	template<typename T>
 	bool removeComponent()
 	{
-		return m_registry->remove<T>(m_handle);
+		return m_scene->getRegistry().remove<T>(m_handle);
 	}
 
 private:
-	std::shared_ptr<entt::registry> m_registry;
+	Scene* m_scene;
 	entt::entity m_handle;
 
 	Entity* m_parent;

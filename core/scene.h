@@ -1,8 +1,11 @@
 #pragma once
 
-#include "entity.h"
-#include "camera.h"
+#include <set>
 #include <map>
+#include <memory>
+#include <chrono>
+#include <entt/entt.hpp>
+#include "camera.h"
 
 class Scene
 {
@@ -16,13 +19,22 @@ public:
 	void end();
 	void post();
 
-	Entity createEntity(const std::string& name);
-
+	friend class Entity;
+	std::shared_ptr<class Entity> createEntity(const std::string& name);
+	
 	void onViewportSize(uint32_t width, uint32_t height);
+	float time();
 
 private:
-	Entity m_rootEntity;
+	entt::registry& getRegistry() { return m_registry; };
+	void removeEntity(const std::string& name);
+
+	entt::registry m_registry;
+
+	std::shared_ptr<class Entity> m_rootEntity;
+	std::map<std::string, std::shared_ptr<class Entity>> m_entities;
+
 	std::unique_ptr<Camera> m_camera;
 
-	std::shared_ptr<entt::registry> m_registry;
+	std::chrono::steady_clock::time_point m_beginTime;
 };

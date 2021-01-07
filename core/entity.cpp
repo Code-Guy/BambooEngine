@@ -1,15 +1,10 @@
 #include "entity.h"
 #include "component/component.h"
 
-Entity::Entity(std::shared_ptr<entt::registry> registry, entt::entity handle) :
-	m_registry(registry), m_handle(handle)
+Entity::Entity(Scene* scene, entt::entity handle) :
+	m_scene(scene), m_handle(handle)
 {
 	m_parent = nullptr;
-}
-
-Entity::Entity()
-{
-
 }
 
 Entity::~Entity()
@@ -17,10 +12,12 @@ Entity::~Entity()
 
 }
 
-void Entity::attach(Entity* parent)
+void Entity::attach(std::shared_ptr<Entity> parent)
 {
-	m_parent = parent;
-	parent->m_children.insert(this);
+	detach();
+
+	m_parent = parent.get();
+	m_parent->m_children.insert(this);
 }
 
 void Entity::detach()
@@ -32,8 +29,18 @@ void Entity::detach()
 	}
 }
 
+void Entity::destroy()
+{
+	detach();
+
+	auto& tag = getComponent<TagComponent>();
+	m_scene->removeEntity(tag.name);
+	m_scene->getRegistry().remove(m_handle);
+}
+
 void Entity::tick()
 {
+	auto& tag = getComponent<TagComponent>();
 	auto& transform = getComponent<TransformComponent>();
 	transform.localMatrix = transform.calcModelMatrix();
 

@@ -3,7 +3,7 @@
 
 layout(push_constant) uniform FPCO
 {
-	layout(offset = 64)
+	layout(offset = 128)
 	vec3 cameraPosition; float p0;
 	vec3 lightDirection; float p1;
 } fpco;

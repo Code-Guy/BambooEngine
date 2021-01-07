@@ -77,7 +77,7 @@ void Engine::evaluateTime()
 {
 	// 计算当前帧所花的时间，计算帧率
 	std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
-	m_deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - m_beginTime).count() * 1e-9);
+	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(endTime - m_beginTime).count();
 
 	char title[100];
 	snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / m_deltaTime));

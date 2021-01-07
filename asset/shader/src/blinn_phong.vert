@@ -8,6 +8,7 @@ layout(binding = 0) uniform UBO
 
 layout(push_constant) uniform VPCO
 {
+	mat4 m;
 	mat4 mvp;
 } vpco;
 
@@ -25,6 +26,6 @@ void main()
 	gl_Position = vpco.mvp * vec4(inPosition, 1.0);
 	
 	outTexCoord = inTexCoord;
-	outNormal = inNormal;
-	outPosition = inPosition;
+	outNormal = (vpco.m * vec4(inNormal, 0.0)).xyz;
+	outPosition = (vpco.m * vec4(inPosition, 1.0)).xyz;
 }

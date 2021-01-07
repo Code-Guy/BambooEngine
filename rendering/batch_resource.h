@@ -14,6 +14,7 @@ struct UBO
 
 struct VPCO
 {
+	glm::mat4 m;
 	glm::mat4 mvp;
 };
 

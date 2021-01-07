@@ -8,7 +8,7 @@
 /* Tag */
 struct TagComponent
 {
-	std::string m_name;
+	std::string name;
 };
 
 /* Transform */
@@ -29,11 +29,11 @@ struct TransformComponent
 	{
 		glm::mat4 modelMatrix(1.0f);
 
-		glm::scale(modelMatrix, scale);
-		glm::rotate(modelMatrix, rotation.z, UpVector);
-		glm::rotate(modelMatrix, rotation.y, RightVector);
-		glm::rotate(modelMatrix, rotation.x, ForwardVector);
-		glm::translate(modelMatrix, position);
+		modelMatrix = glm::scale(modelMatrix, scale);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.z), UpVector);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.y), RightVector);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), ForwardVector);
+		modelMatrix = glm::translate(modelMatrix, position);
 
 		return modelMatrix;
 	}
