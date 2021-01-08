@@ -12,8 +12,11 @@ void Renderer::init(std::shared_ptr<GraphicsBackend>& backend)
 	m_renderPass.init(backend, m_swapchain.getFormat(), m_depthFormat);
 
 	auto staticMeshPipeline = std::make_shared<StaticMeshPipeline>();
+	auto skeletalMeshPipeline = std::make_shared<SkeletalMeshPipeline>();
 	staticMeshPipeline->init(backend, m_renderPass.get());
+	skeletalMeshPipeline->init(backend, m_renderPass.get());
 	m_pipelines[EPipelineType::StaticMesh] = staticMeshPipeline;
+	m_pipelines[EPipelineType::SkeletalMesh] = skeletalMeshPipeline;
 
 	createCommandPool();
 	createMsaaResources();

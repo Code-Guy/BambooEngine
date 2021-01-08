@@ -24,21 +24,19 @@ void ResourceFactory::destroy()
 	vkDestroyCommandPool(m_backend->getDevice(), m_instantCommandPool, nullptr);
 }
 
-void ResourceFactory::registerBatchResource(std::shared_ptr<BatchResource> batchResource)
+void ResourceFactory::registerBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource)
 {
-	m_renderer->getPipeline(EPipelineType::StaticMesh)->registerBatchResource(batchResource);
+	m_renderer->getPipeline(pipelineType)->registerBatchResource(batchResource);
 }
 
-void ResourceFactory::unregisterBatchResource(std::shared_ptr<BatchResource> batchResource)
+void ResourceFactory::unregisterBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource)
 {
 	batchResource->destroy(m_backend->getDevice(), m_backend->getAllocator());
-	m_renderer->getPipeline(EPipelineType::StaticMesh)->unregisterBatchResource(batchResource);
+	m_renderer->getPipeline(pipelineType)->unregisterBatchResource(batchResource);
 }
 
-void ResourceFactory::createVertexBuffer(const std::vector<StaticVertex>& vertices, VmaBuffer& vertexBuffer)
+void ResourceFactory::createVertexBuffer(uint32_t bufferSize, void* verticesData, VmaBuffer& vertexBuffer)
 {
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
 	VmaBuffer stagingBuffer;
 	createBuffer(bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -50,7 +48,7 @@ void ResourceFactory::createVertexBuffer(const std::vector<StaticVertex>& vertic
 	// 内存拷贝过程确保在下一次vkQueueCommit前一定完成
 	void* data;
 	vmaMapMemory(m_backend->getAllocator(), stagingBuffer.allocation, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+	memcpy(data, verticesData, static_cast<size_t>(bufferSize));
 	vmaUnmapMemory(m_backend->getAllocator(), stagingBuffer.allocation);
 
 	createBuffer(bufferSize,

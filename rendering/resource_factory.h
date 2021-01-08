@@ -1,7 +1,6 @@
 #pragma once
 
 #include "rendering/batch_resource.h"
-#include "component/mesh.h"
 #include "component/material.h"
 
 class ResourceFactory
@@ -11,10 +10,10 @@ public:
 	void init(std::shared_ptr<class GraphicsBackend>& backend, std::shared_ptr<class Renderer> renderer);
 	void destroy();
 
-	void registerBatchResource(std::shared_ptr<BatchResource> batchResource);
-	void unregisterBatchResource(std::shared_ptr<BatchResource> batchResource);
+	void registerBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource);
+	void unregisterBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource);
 
-	void createVertexBuffer(const std::vector<StaticVertex>& vertices, VmaBuffer& vertexBuffer);
+	void createVertexBuffer(uint32_t bufferSize, void* verticesData, VmaBuffer& vertexBuffer);
 	void createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer);
 	void createTextureImage(std::shared_ptr<Texture>& texture, VmaImage& image);
 	

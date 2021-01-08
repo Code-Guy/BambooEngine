@@ -62,15 +62,16 @@ public:
 	virtual void destroyBatchResource() override;
 
 	std::shared_ptr<StaticMesh> mesh;
-	std::shared_ptr<StaticMeshBatchResource> batchResource;
+	std::shared_ptr<BasicBatchResource> batchResource;
 };
 
-/* Skinned Mesh */
-struct SkinnedMeshComponent : public MeshComponent
+/* Skeletal Mesh */
+struct SkeletalMeshComponent : public MeshComponent
 {
 public:
 	virtual void initBatchResource() override;
 	virtual void destroyBatchResource() override;
 
-	std::shared_ptr<SkinnedMesh> mesh;
+	std::shared_ptr<SkeletalMesh> mesh;
+	std::shared_ptr<BasicBatchResource> batchResource;
 };

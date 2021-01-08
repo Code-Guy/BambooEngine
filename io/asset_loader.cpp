@@ -41,10 +41,8 @@ std::vector<char> AssetLoader::loadBinary(const std::string& filename)
 	return buffer;
 }
 
-StaticMeshComponent AssetLoader::loadModel(const std::string& filename)
+void AssetLoader::loadModel(const std::string& filename, StaticMeshComponent& staticMeshComponent, SkeletalMeshComponent& skeletalMeshComponent)
 {
-	StaticMeshComponent staticMeshComponent;
-
 	Assimp::Importer importer;
 	const aiScene* assScene = importer.ReadFile(filename.c_str(),
 		aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
@@ -54,11 +52,28 @@ StaticMeshComponent AssetLoader::loadModel(const std::string& filename)
 		throw std::runtime_error((boost::format("failed to load model：%s, error: %s") % filename % importer.GetErrorString()).str());
 	}
 
-	staticMeshComponent.mesh = std::make_shared<StaticMesh>();
+	if (!assScene->mMeshes[0]->HasBones())
+	{
+		staticMeshComponent.mesh = std::make_shared<StaticMesh>();
+	}
+	else
+	{
+		skeletalMeshComponent.mesh = std::make_shared<SkeletalMesh>();
+	}
+	processNode(assScene->mRootNode, assScene, filename, staticMeshComponent, skeletalMeshComponent);
+}
 
-	processNode(assScene->mRootNode, assScene, filename, staticMeshComponent);
+void AssetLoader::loadAnimation(const std::string& filename)
+{
+	Assimp::Importer importer;
+	const aiScene* assScene = importer.ReadFile(filename.c_str(),
+		aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 
-	return staticMeshComponent;
+	if (!assScene || assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assScene->mRootNode)
+	{
+		throw std::runtime_error((boost::format("failed to load model：%s, error: %s") % filename % importer.GetErrorString()).str());
+	}
+
 }
 
 std::shared_ptr<Texture> AssetLoader::loadTexure(const std::string& filename)
@@ -73,26 +88,6 @@ std::shared_ptr<Texture> AssetLoader::loadTexure(const std::string& filename)
 	}
 
 	return texture;
-}
-
-std::vector<std::string> AssetLoader::traverseFiles(const std::string& directory)
-{
-	boost::filesystem::path p(directory);
-	boost::filesystem::directory_iterator end_itr;
-	std::vector<std::string> filenames;
-
-	// cycle through the directory
-	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
-	{
-		// If it's not a directory, list it. If you want to list directories too, just remove this check.
-		if (is_regular_file(itr->path())) 
-		{
-			// assign current file name to current_file and echo it out to the console.
-			filenames.push_back(itr->path().string());
-		}
-	}
-
-	return filenames;
 }
 
 std::string AssetLoader::loadString(const std::string& filename)
@@ -111,48 +106,49 @@ std::string AssetLoader::loadString(const std::string& filename)
 	return out;
 }
 
-void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const std::string& filename, StaticMeshComponent& staticMeshComponent)
+void AssetLoader::processNode(aiNode* assNode, const aiScene* assScene, const std::string& filename, StaticMeshComponent& staticMeshComponent, SkeletalMeshComponent& skeletalMeshComponent)
 {
 	for (uint32_t i = 0; i < assNode->mNumMeshes; ++i)
 	{
 		aiMesh* assMesh = assScene->mMeshes[assNode->mMeshes[i]];
-		processMesh(assMesh, assScene, filename, staticMeshComponent);
+		if (!assMesh->HasBones())
+		{
+			auto& mesh = staticMeshComponent.mesh;
+			uint32_t baseIndex = static_cast<uint32_t>(mesh->vertices.size());
+			processSection(assMesh, assScene, filename, baseIndex, mesh->indices, staticMeshComponent.sections);
+			processStaticVertices(assMesh, assScene, mesh->vertices);
+		}
+		else
+		{
+			auto& mesh = skeletalMeshComponent.mesh;
+			uint32_t baseIndex = static_cast<uint32_t>(mesh->vertices.size());
+			processSection(assMesh, assScene, filename, baseIndex, mesh->indices, skeletalMeshComponent.sections);
+			processSkeletalVertices(assMesh, assScene, mesh->vertices);
+		}
 	}
 
 	for (uint32_t i = 0; i < assNode->mNumChildren; ++i)
 	{
-		processNode(assNode->mChildren[i], assScene, filename, staticMeshComponent);
+		processNode(assNode->mChildren[i], assScene, filename, staticMeshComponent, skeletalMeshComponent);
 	}
 }
 
-void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const std::string& filename, StaticMeshComponent& staticMeshComponent)
+void AssetLoader::processSection(struct aiMesh* assMesh, const struct aiScene* assScene, const std::string& filename, 
+	uint32_t baseIndex, std::vector<uint32_t>& indices, std::vector<Section>& sections)
 {
-	std::shared_ptr<StaticMesh> mesh = staticMeshComponent.mesh;
-	staticMeshComponent.sections.push_back(Section{});
-	Section& section = staticMeshComponent.sections.back();
+	sections.push_back(Section{});
+	Section& section = sections.back();
 
 	// indices
-	uint32_t baseIndex = static_cast<uint32_t>(mesh->vertices.size());
 	for (uint32_t i = 0; i < assMesh->mNumFaces; ++i)
 	{
 		const aiFace& face = assMesh->mFaces[i];
 		for (uint32_t j = 0; j < face.mNumIndices; ++j)
 		{
-			mesh->indices.push_back(baseIndex + face.mIndices[j]);
+			indices.push_back(baseIndex + face.mIndices[j]);
 		}
 	}
-	section.indexCount = static_cast<uint32_t>(mesh->indices.size());
-
-	// vertices
-	for (uint32_t i = 0; i < assMesh->mNumVertices; ++i)
-	{
-		StaticVertex vertex;
-		vertex.position = { assMesh->mVertices[i].x, assMesh->mVertices[i].y, assMesh->mVertices[i].z };
-		vertex.texCoord = { assMesh->mTextureCoords[0][i].x, assMesh->mTextureCoords[0][i].y };
-		vertex.normal = { assMesh->mNormals[i].x, assMesh->mNormals[i].y, assMesh->mNormals[i].z };
-
-		mesh->vertices.push_back(vertex);
-	}
+	section.indexCount = static_cast<uint32_t>(indices.size());
 
 	// materials
 	std::shared_ptr<Material> material = std::make_shared<Material>();
@@ -174,4 +170,55 @@ void AssetLoader::processMesh(aiMesh* assMesh, const aiScene* assScene, const st
 		material->baseTex = loadTexure("asset/texture/default_texture.jpg");
 	}
 	section.material = material;
+}
+
+void AssetLoader::processStaticVertices(struct aiMesh* assMesh, const struct aiScene* assScene, std::vector<StaticVertex>& staticVertices)
+{
+	// vertices
+	for (uint32_t i = 0; i < assMesh->mNumVertices; ++i)
+	{
+		StaticVertex vertex;
+		vertex.position = { assMesh->mVertices[i].x, assMesh->mVertices[i].y, assMesh->mVertices[i].z };
+		vertex.texCoord = { assMesh->mTextureCoords[0][i].x, assMesh->mTextureCoords[0][i].y };
+		vertex.normal = { assMesh->mNormals[i].x, assMesh->mNormals[i].y, assMesh->mNormals[i].z };
+
+		staticVertices.push_back(vertex);
+	}
+}
+
+void AssetLoader::processSkeletalVertices(struct aiMesh* assMesh, const struct aiScene* assScene, std::vector<SkeletalVertex>& skeletalVertices)
+{
+	// vertices
+	for (uint32_t i = 0; i < assMesh->mNumVertices; ++i)
+	{
+		SkeletalVertex vertex;
+		vertex.position = { assMesh->mVertices[i].x, assMesh->mVertices[i].y, assMesh->mVertices[i].z };
+		vertex.texCoord = { assMesh->mTextureCoords[0][i].x, assMesh->mTextureCoords[0][i].y };
+		vertex.normal = { assMesh->mNormals[i].x, assMesh->mNormals[i].y, assMesh->mNormals[i].z };
+
+		// 初始化骨骼索引和权重列表
+		for (uint32_t j = 0; j < 4; ++j)
+		{
+			vertex.bones[j] = INVALID_BONE;
+			vertex.weights[j] = 0.0f;
+		}
+
+		skeletalVertices.push_back(vertex);
+	}
+
+	// 缓存每个顶点当前已经设置的骨骼数量
+	std::vector<uint32_t> vertexBoneNums(skeletalVertices.size(), 0);
+	for (uint8_t i = 0; i < static_cast<uint8_t>(assMesh->mNumBones); ++i)
+	{
+		aiBone* assBone = assMesh->mBones[i];
+
+		for (uint32_t j = 0; j < assBone->mNumWeights; ++j)
+		{
+			aiVertexWeight& weight = assBone->mWeights[j];
+
+			uint32_t vertexBoneIndex = vertexBoneNums[weight.mVertexId]++;
+			skeletalVertices[weight.mVertexId].bones[vertexBoneIndex] = i;
+			skeletalVertices[weight.mVertexId].weights[vertexBoneIndex] = weight.mWeight;
+		}
+	}
 }

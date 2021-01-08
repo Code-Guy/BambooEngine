@@ -7,9 +7,14 @@
 
 #include "core/engine_type.h"
 
-struct UBO
+struct StaticMeshUBO
 {
-	glm::mat4 mvp;
+	glm::mat4 padding;
+};
+
+struct SkeletalMeshUBO
+{
+	glm::mat4 padding;
 };
 
 struct VPCO
@@ -94,7 +99,7 @@ struct BatchResource
 	}
 };
 
-struct StaticMeshBatchResource : public BatchResource
+struct BasicBatchResource : public BatchResource
 {
 	std::vector<VmaImageViewSampler> baseIVSs;
 

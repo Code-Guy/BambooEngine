@@ -10,6 +10,7 @@
 #include "render_pass.h"
 #include "framebuffer.h"
 #include "static_mesh_pipeline.h"
+#include "skeletal_mesh_pipeline.h"
 
 class Renderer
 {

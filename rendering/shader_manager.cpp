@@ -14,7 +14,7 @@ ShaderManager& ShaderManager::getInstance()
 void ShaderManager::init()
 {
 	std::string shaderCompilerPath = ConfigManager::getInstance().getShaderCompilerPath();
-	std::vector<std::string> shaderFilenames = AssetLoader::getInstance().traverseFiles("asset/shader/src/");
+	std::vector<std::string> shaderFilenames = Utility::traverseFiles("asset/shader/src/");
 
 	for (const std::string& shaderFilename : shaderFilenames)
 	{

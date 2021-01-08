@@ -57,3 +57,23 @@ std::string Utility::basename(const std::string& filename)
 	boost::split(strs, name, boost::is_any_of("."));
 	return strs[0];
 }
+
+std::vector<std::string> Utility::traverseFiles(const std::string& directory)
+{
+	boost::filesystem::path p(directory);
+	boost::filesystem::directory_iterator end_itr;
+	std::vector<std::string> filenames;
+
+	// cycle through the directory
+	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
+	{
+		// If it's not a directory, list it. If you want to list directories too, just remove this check.
+		if (is_regular_file(itr->path()))
+		{
+			// assign current file name to current_file and echo it out to the console.
+			filenames.push_back(itr->path().string());
+		}
+	}
+
+	return filenames;
+}

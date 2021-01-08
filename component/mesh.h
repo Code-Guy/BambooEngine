@@ -10,15 +10,11 @@ struct StaticVertex
 	glm::vec3 normal;
 };
 
-#define BONE_NUM_PER_VERTEX 4
-struct SkinnedVertex
+#define INVALID_BONE -1
+struct SkeletalVertex : public StaticVertex
 {
-	glm::vec3 position;
-	glm::vec2 texCoord;
-	glm::vec3 normal;
-
-	uint32_t BoneID[BONE_NUM_PER_VERTEX];
-	float Weights[BONE_NUM_PER_VERTEX];
+	glm::ivec4 bones;
+	glm::vec4 weights;
 };
 
 struct StaticMesh
@@ -27,8 +23,8 @@ struct StaticMesh
 	std::vector<uint32_t> indices;
 };
 
-struct SkinnedMesh
+struct SkeletalMesh
 {
-	std::vector<SkinnedVertex> vertices;
+	std::vector<SkeletalVertex> vertices;
 	std::vector<uint32_t> indices;
 };

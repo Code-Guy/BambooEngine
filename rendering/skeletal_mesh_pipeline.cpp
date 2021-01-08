@@ -1,6 +1,6 @@
-#include "static_mesh_pipeline.h"
+#include "skeletal_mesh_pipeline.h"
 
-void StaticMeshPipeline::pushConstants(VkCommandBuffer commandBuffer, std::shared_ptr<BatchResource> batchResource)
+void SkeletalMeshPipeline::pushConstants(VkCommandBuffer commandBuffer, std::shared_ptr<BatchResource> batchResource)
 {
 	BasicBatchResource* batch = (BasicBatchResource*)batchResource.get();
 
@@ -12,7 +12,7 @@ void StaticMeshPipeline::pushConstants(VkCommandBuffer commandBuffer, std::share
 	}
 }
 
-void StaticMeshPipeline::createDescriptorSets(std::shared_ptr<BatchResource> batchResource)
+void SkeletalMeshPipeline::createDescriptorSets(std::shared_ptr<BatchResource> batchResource)
 {
 	BasicBatchResource* batch = (BasicBatchResource*)batchResource.get();
 	uint32_t sectionCount = static_cast<uint32_t>(batch->indexCounts.size());
@@ -43,7 +43,7 @@ void StaticMeshPipeline::createDescriptorSets(std::shared_ptr<BatchResource> bat
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = batch->uniformBuffers[i].buffer;
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(StaticMeshUBO);
+			bufferInfo.range = sizeof(SkeletalMeshUBO);
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet = batch->descriptorSets[index];
@@ -71,12 +71,12 @@ void StaticMeshPipeline::createDescriptorSets(std::shared_ptr<BatchResource> bat
 	}
 }
 
-uint32_t StaticMeshPipeline::getMaxBatchNum()
+uint32_t SkeletalMeshPipeline::getMaxBatchNum()
 {
-	return 32;
+	return 8;
 }
 
-void StaticMeshPipeline::createDescriptorSetLayout()
+void SkeletalMeshPipeline::createDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
@@ -105,7 +105,7 @@ void StaticMeshPipeline::createDescriptorSetLayout()
 	}
 }
 
-void StaticMeshPipeline::createDescriptorPool()
+void SkeletalMeshPipeline::createDescriptorPool()
 {
 	uint32_t descriptorCount = SWAPCHAIN_IMAGE_NUM * getMaxBatchNum();
 
@@ -127,10 +127,10 @@ void StaticMeshPipeline::createDescriptorPool()
 	}
 }
 
-std::vector<VkPipelineShaderStageCreateInfo> StaticMeshPipeline::createShaderStages(std::vector<VkShaderModule>& shaderModules)
+std::vector<VkPipelineShaderStageCreateInfo> SkeletalMeshPipeline::createShaderStages(std::vector<VkShaderModule>& shaderModules)
 {
 	// º”‘ÿshader binary code
-	std::vector<char> vertShaderCode = AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_vert.spv");
+	std::vector<char> vertShaderCode = AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_skeletal_vert.spv");
 	std::vector<char> fragShaderCode = AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_frag.spv");
 	VkShaderModule vertShaderModule = ResourceFactory::getInstance().createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = ResourceFactory::getInstance().createShaderModule(fragShaderCode);
@@ -153,35 +153,45 @@ std::vector<VkPipelineShaderStageCreateInfo> StaticMeshPipeline::createShaderSta
 	return { vertShaderStageInfo, fragShaderStageInfo };
 }
 
-VkPipelineVertexInputStateCreateInfo StaticMeshPipeline::createVertexInputState()
+VkPipelineVertexInputStateCreateInfo SkeletalMeshPipeline::createVertexInputState()
 {
-	// StaticVertex Input
+	// SkeletalVertex Input
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
 	// ∂•µ„∞Û∂®√Ë ˆ
 	m_bindingDescriptions.resize(1, VkVertexInputBindingDescription{});
 	m_bindingDescriptions[0].binding = 0;
-	m_bindingDescriptions[0].stride = sizeof(StaticVertex);
+	m_bindingDescriptions[0].stride = sizeof(SkeletalVertex);
 	m_bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	// ∂•µ„ Ù–‘√Ë ˆ
-	m_attributeDescriptions.resize(3, VkVertexInputAttributeDescription{});
+	m_attributeDescriptions.resize(5, VkVertexInputAttributeDescription{});
 
 	m_attributeDescriptions[0].binding = 0;
 	m_attributeDescriptions[0].location = 0;
 	m_attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	m_attributeDescriptions[0].offset = offsetof(StaticVertex, position);
+	m_attributeDescriptions[0].offset = offsetof(SkeletalVertex, position);
 
 	m_attributeDescriptions[1].binding = 0;
 	m_attributeDescriptions[1].location = 1;
 	m_attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-	m_attributeDescriptions[1].offset = offsetof(StaticVertex, texCoord);
+	m_attributeDescriptions[1].offset = offsetof(SkeletalVertex, texCoord);
 
 	m_attributeDescriptions[2].binding = 0;
 	m_attributeDescriptions[2].location = 2;
 	m_attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-	m_attributeDescriptions[2].offset = offsetof(StaticVertex, normal);
+	m_attributeDescriptions[2].offset = offsetof(SkeletalVertex, normal);
+
+	m_attributeDescriptions[3].binding = 0;
+	m_attributeDescriptions[3].location = 3;
+	m_attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SINT;
+	m_attributeDescriptions[3].offset = offsetof(SkeletalVertex, bones);
+
+	m_attributeDescriptions[4].binding = 0;
+	m_attributeDescriptions[4].location = 4;
+	m_attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_attributeDescriptions[4].offset = offsetof(SkeletalVertex, weights);
 
 	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(m_bindingDescriptions.size());
 	vertexInputInfo.pVertexBindingDescriptions = m_bindingDescriptions.data();
@@ -191,7 +201,7 @@ VkPipelineVertexInputStateCreateInfo StaticMeshPipeline::createVertexInputState(
 	return vertexInputInfo;
 }
 
-std::vector<VkPushConstantRange> StaticMeshPipeline::createPushConstantRanges()
+std::vector<VkPushConstantRange> SkeletalMeshPipeline::createPushConstantRanges()
 {
 	std::vector<VkPushConstantRange> pushConstantRanges(2, VkPushConstantRange{});
 

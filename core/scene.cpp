@@ -29,22 +29,32 @@ void Scene::init(uint32_t width, uint32_t height)
 		//"asset/model/dinosaur/dinosaur.fbx",
 		//"asset/model/armadillo/armadillo.fbx",
 		"asset/model/dragon/dragon.fbx",
-		"asset/model/ogre/ogre.fbx",
+		"asset/model/mannequin/mannequin.fbx",
 		"asset/model/sponza/sponza.fbx",
 	};
 
+	AssetLoader::getInstance().loadAnimation("asset/model/mannequin/mannequin_run.fbx");
+
 	for (const std::string& modelName : modelNames)
 	{
-		StaticMeshComponent staticMeshComponent = AssetLoader::getInstance().loadModel(modelName);
+		StaticMeshComponent staticMeshComponent;
+		SkeletalMeshComponent skeletalMeshComponent;
+		AssetLoader::getInstance().loadModel(modelName, staticMeshComponent, skeletalMeshComponent);
 
 		auto entity = createEntity(Utility::basename(modelName));
-		entity->addComponent<StaticMeshComponent>(staticMeshComponent);
-
+		if (staticMeshComponent.mesh)
+		{
+			entity->addComponent<StaticMeshComponent>(staticMeshComponent);
+		}
+		else
+		{
+			entity->addComponent<SkeletalMeshComponent>(skeletalMeshComponent);
+		}
 		entity->attach(m_rootEntity);
 	}
 
-	m_entities["ogre"]->attach(m_entities["sponza"]);
-	m_entities["dragon"]->attach(m_entities["ogre"]);
+	m_entities["mannequin"]->attach(m_entities["sponza"]);
+	m_entities["dragon"]->attach(m_entities["mannequin"]);
 	m_entities["dragon"]->getComponent<TransformComponent>().position = glm::vec3(4.0f, 4.0f, 4.0f);
 	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(20.0f, 6.0f, 8.0f);
 }
@@ -60,6 +70,10 @@ void Scene::pre()
 	m_registry.view<StaticMeshComponent>().each([](auto entity, StaticMeshComponent& staticMeshComponent) {
 		staticMeshComponent.initBatchResource();
 	});
+
+	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComponent) {
+		skeletalMeshComponent.initBatchResource();
+	});
 }
 
 void Scene::begin()
@@ -71,7 +85,7 @@ void Scene::tick(float deltaTime)
 {
 	m_camera->tick(deltaTime);
 
-	m_entities["ogre"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, time() * 90.0f);
+	m_entities["mannequin"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, time() * 90.0f);
 	m_rootEntity->tick();
 
 	m_registry.view<TransformComponent, StaticMeshComponent>().each([this](auto entity, TransformComponent& transformComponent, StaticMeshComponent& staticMeshComponent) {
@@ -79,6 +93,13 @@ void Scene::tick(float deltaTime)
 		staticMeshComponent.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComponent.worldMatrix;
 		staticMeshComponent.batchResource->fpco.cameraPosition = m_camera->getPosition();
 		staticMeshComponent.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
+	});
+
+	m_registry.view<TransformComponent, SkeletalMeshComponent>().each([this](auto entity, TransformComponent& transformComponent, SkeletalMeshComponent& skeletalMeshComponent) {
+		skeletalMeshComponent.batchResource->vpco.m = transformComponent.worldMatrix;
+		skeletalMeshComponent.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComponent.worldMatrix;
+		skeletalMeshComponent.batchResource->fpco.cameraPosition = m_camera->getPosition();
+		skeletalMeshComponent.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
 	});
 }
 
@@ -91,6 +112,10 @@ void Scene::post()
 {
 	m_registry.view<StaticMeshComponent>().each([](auto entity, auto& staticMeshComponent) {
 		staticMeshComponent.destroyBatchResource();
+	});
+
+	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComponent) {
+		skeletalMeshComponent.destroyBatchResource();
 	});
 }
 

@@ -4,5 +4,5 @@
 
 enum class EPipelineType
 {
-	StaticMesh, SkinnedMesh
+	StaticMesh, SkeletalMesh
 };

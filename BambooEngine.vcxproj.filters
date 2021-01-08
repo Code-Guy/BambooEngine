@@ -61,6 +61,12 @@
     <ClCompile Include="component\component.cpp">
       <Filter>component</Filter>
     </ClCompile>
+    <ClCompile Include="rendering\skeletal_mesh_pipeline.cpp">
+      <Filter>rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="component\animation.cpp">
+      <Filter>component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="core">
@@ -101,9 +107,6 @@
     <ClInclude Include="io\asset_loader.h">
       <Filter>io</Filter>
     </ClInclude>
-    <ClInclude Include="component\material.h">
-      <Filter>component</Filter>
-    </ClInclude>
     <ClInclude Include="input\input_manager.h">
       <Filter>input</Filter>
     </ClInclude>
@@ -121,9 +124,6 @@
     </ClInclude>
     <ClInclude Include="resource\resource.h">
       <Filter>resource</Filter>
-    </ClInclude>
-    <ClInclude Include="component\mesh.h">
-      <Filter>component</Filter>
     </ClInclude>
     <ClInclude Include="rendering\render_pass.h">
       <Filter>rendering</Filter>
@@ -153,6 +153,18 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="component\component.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering\skeletal_mesh_pipeline.h">
+      <Filter>rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="component\animation.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\material.h">
+      <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="component\mesh.h">
       <Filter>component</Filter>
     </ClInclude>
   </ItemGroup>

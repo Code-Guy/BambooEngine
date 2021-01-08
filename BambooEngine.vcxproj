@@ -157,6 +157,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="component\animation.cpp" />
     <ClCompile Include="component\component.cpp" />
     <ClCompile Include="config\config_manager.cpp" />
     <ClCompile Include="core\camera.cpp" />
@@ -174,11 +175,13 @@
     <ClCompile Include="rendering\render_pass.cpp" />
     <ClCompile Include="rendering\resource_factory.cpp" />
     <ClCompile Include="rendering\shader_manager.cpp" />
+    <ClCompile Include="rendering\skeletal_mesh_pipeline.cpp" />
     <ClCompile Include="rendering\static_mesh_pipeline.cpp" />
     <ClCompile Include="rendering\swapchain.cpp" />
     <ClCompile Include="utility\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="component\animation.h" />
     <ClInclude Include="component\component.h" />
     <ClInclude Include="component\material.h" />
     <ClInclude Include="component\mesh.h" />
@@ -197,6 +200,7 @@
     <ClInclude Include="rendering\render_pass.h" />
     <ClInclude Include="rendering\resource_factory.h" />
     <ClInclude Include="rendering\shader_manager.h" />
+    <ClInclude Include="rendering\skeletal_mesh_pipeline.h" />
     <ClInclude Include="rendering\static_mesh_pipeline.h" />
     <ClInclude Include="rendering\swapchain.h" />
     <ClInclude Include="resource\resource.h" />
