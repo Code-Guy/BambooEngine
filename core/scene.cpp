@@ -7,6 +7,10 @@
 
 void Scene::init(uint32_t width, uint32_t height)
 {
+	// 初始化计时管理器
+	m_timerManager = std::make_shared<TimerManager>();
+	m_timerManager->addTimer(0.0166f, std::bind(&Scene::tickTransform, this, std::placeholders::_1), true);
+
 	// 初始化摄像机
 	m_camera = std::make_unique<Camera>(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 50.0f, 0.1f);
 	m_camera->setFovy(45.0f);
@@ -24,36 +28,59 @@ void Scene::init(uint32_t width, uint32_t height)
 	m_rootEntity = createEntity("root");
 
 	// 加载模型资源，生成组件
-	std::vector<std::string> modelNames = {
+	std::vector<std::string> meshNames = {
 		//"asset/model/ground/ground.fbx",
 		//"asset/model/dinosaur/dinosaur.fbx",
 		//"asset/model/armadillo/armadillo.fbx",
-		"asset/model/dragon/dragon.fbx",
 		"asset/model/mannequin/mannequin.fbx",
-		"asset/model/sponza/sponza.fbx",
+		"asset/model/dragon/dragon.fbx",
+		//"asset/model/sponza/sponza.fbx",
+
+		"asset/model/mannequin/mannequin_run.fbx"
 	};
 
-	AssetLoader::getInstance().loadAnimation("asset/model/mannequin/mannequin_run.fbx");
-
-	for (const std::string& modelName : modelNames)
+	for (const std::string& meshName : meshNames)
 	{
-		StaticMeshComponent staticMeshComponent;
-		SkeletalMeshComponent skeletalMeshComponent;
-		AssetLoader::getInstance().loadModel(modelName, staticMeshComponent, skeletalMeshComponent);
+		StaticMeshComponent staticMeshComp;
+		SkeletalMeshComponent skeletalMeshComp;
+		AnimatorComponent animatorComp;
+		AssetLoader::getInstance().loadModel(meshName, staticMeshComp, skeletalMeshComp, animatorComp);
 
-		auto entity = createEntity(Utility::basename(modelName));
-		if (staticMeshComponent.mesh)
+		if (animatorComp.isValid())
 		{
-			entity->addComponent<StaticMeshComponent>(staticMeshComponent);
+			// 处理动画
+			m_registry.view<SkeletalMeshComponent>().each([this, &animatorComp](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
+				if (animatorComp.isCompatible(skeletalMeshComp.skeleton))
+				{
+					animatorComp.skeleton = skeletalMeshComp.skeleton;
+					if (m_registry.has<AnimatorComponent>(entity))
+					{
+						m_registry.get<AnimatorComponent>(entity).merge(animatorComp);
+					}
+					else
+					{
+						m_registry.emplace<AnimatorComponent>(entity, animatorComp);
+					}
+				}
+			});
 		}
 		else
 		{
-			entity->addComponent<SkeletalMeshComponent>(skeletalMeshComponent);
+			// 处理模型
+			auto entity = createEntity(Utility::basename(meshName));
+			if (staticMeshComp.isValid())
+			{
+				entity->addComponent<StaticMeshComponent>(staticMeshComp);
+			}
+			else if (skeletalMeshComp.isValid())
+			{
+				entity->addComponent<SkeletalMeshComponent>(skeletalMeshComp);
+			}
+			entity->attach(m_rootEntity);
 		}
-		entity->attach(m_rootEntity);
 	}
 
-	m_entities["mannequin"]->attach(m_entities["sponza"]);
+	//m_entities["mannequin"]->attach(m_entities["sponza"]);
 	m_entities["dragon"]->attach(m_entities["mannequin"]);
 	m_entities["dragon"]->getComponent<TransformComponent>().position = glm::vec3(4.0f, 4.0f, 4.0f);
 	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(20.0f, 6.0f, 8.0f);
@@ -67,62 +94,48 @@ void Scene::destroy()
 
 void Scene::pre()
 {
-	m_registry.view<StaticMeshComponent>().each([](auto entity, StaticMeshComponent& staticMeshComponent) {
-		staticMeshComponent.initBatchResource();
+	m_registry.view<StaticMeshComponent>().each([](auto entity, StaticMeshComponent& staticMeshComp) {
+		staticMeshComp.initBatchResource();
 	});
 
-	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComponent) {
-		skeletalMeshComponent.initBatchResource();
+	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
+		skeletalMeshComp.initBatchResource();
 	});
 }
 
 void Scene::begin()
 {
-	m_beginTime = std::chrono::steady_clock::now();
+	m_timerManager->begin();
 }
 
 void Scene::tick(float deltaTime)
 {
-	m_camera->tick(deltaTime);
-
-	m_entities["mannequin"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, time() * 90.0f);
-	m_rootEntity->tick();
-
-	m_registry.view<TransformComponent, StaticMeshComponent>().each([this](auto entity, TransformComponent& transformComponent, StaticMeshComponent& staticMeshComponent) {
-		staticMeshComponent.batchResource->vpco.m = transformComponent.worldMatrix;
-		staticMeshComponent.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComponent.worldMatrix;
-		staticMeshComponent.batchResource->fpco.cameraPosition = m_camera->getPosition();
-		staticMeshComponent.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
-	});
-
-	m_registry.view<TransformComponent, SkeletalMeshComponent>().each([this](auto entity, TransformComponent& transformComponent, SkeletalMeshComponent& skeletalMeshComponent) {
-		skeletalMeshComponent.batchResource->vpco.m = transformComponent.worldMatrix;
-		skeletalMeshComponent.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComponent.worldMatrix;
-		skeletalMeshComponent.batchResource->fpco.cameraPosition = m_camera->getPosition();
-		skeletalMeshComponent.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
-	});
+	m_timerManager->tick(deltaTime);
 }
 
 void Scene::end()
 {
-	
+	m_timerManager->end();
 }
 
 void Scene::post()
 {
-	m_registry.view<StaticMeshComponent>().each([](auto entity, auto& staticMeshComponent) {
-		staticMeshComponent.destroyBatchResource();
+	m_registry.view<StaticMeshComponent>().each([](auto entity, auto& staticMeshComp) {
+		staticMeshComp.destroyBatchResource();
 	});
 
-	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComponent) {
-		skeletalMeshComponent.destroyBatchResource();
+	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
+		skeletalMeshComp.destroyBatchResource();
 	});
 }
 
 std::shared_ptr<Entity> Scene::createEntity(const std::string& name)
 {
 	auto entity = std::make_shared<Entity>(this, m_registry.create());
-	entity->addComponent<TagComponent>(name);
+
+	TagComponent tagComp;
+	tagComp.name = name;
+	entity->addComponent<TagComponent>(tagComp);
 	entity->addComponent<TransformComponent>();
 
 	m_entities[name] = entity;
@@ -137,13 +150,38 @@ void Scene::onViewportSize(uint32_t width, uint32_t height)
 	}
 }
 
-float Scene::time()
-{
-	std::chrono::steady_clock::time_point nowTime = std::chrono::steady_clock::now();
-	return std::chrono::duration<float, std::chrono::seconds::period>(nowTime - m_beginTime).count();
-}
-
 void Scene::removeEntity(const std::string& name)
 {
 	m_entities.erase(name);
+}
+
+void Scene::tickTransform(float deltaTime)
+{
+	// 更新相机姿态
+	m_camera->tick(deltaTime);
+
+	// 更新TransformComponent
+	m_entities["mannequin"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
+	m_rootEntity->tick();
+
+	// 更新StaticMeshComponent
+	m_registry.view<TransformComponent, StaticMeshComponent>().each([this](auto entity, TransformComponent& transformComp, StaticMeshComponent& staticMeshComp) {
+		staticMeshComp.batchResource->vpco.m = transformComp.worldMatrix;
+		staticMeshComp.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComp.worldMatrix;
+		staticMeshComp.batchResource->fpco.cameraPosition = m_camera->getPosition();
+		staticMeshComp.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
+	});
+
+	// 更新SkeletalMeshComponent
+	m_registry.view<TransformComponent, SkeletalMeshComponent>().each([this](auto entity, TransformComponent& transformComp, SkeletalMeshComponent& skeletalMeshComp) {
+		skeletalMeshComp.batchResource->vpco.m = transformComp.worldMatrix;
+		skeletalMeshComp.batchResource->vpco.mvp = m_camera->getViewPerspectiveMatrix() * transformComp.worldMatrix;
+		skeletalMeshComp.batchResource->fpco.cameraPosition = m_camera->getPosition();
+		skeletalMeshComp.batchResource->fpco.lightDirection = glm::vec3(-1.0f, 1.0f, -1.0f);
+	});
+}
+
+void Scene::tickAnimation(float deltaTime)
+{
+
 }

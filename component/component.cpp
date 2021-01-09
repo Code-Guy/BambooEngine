@@ -76,7 +76,7 @@ void SkeletalMeshComponent::initBatchResource()
 	basicBatchResource->uniformBuffers.resize(SWAPCHAIN_IMAGE_NUM);
 	for (size_t i = 0; i < SWAPCHAIN_IMAGE_NUM; ++i)
 	{
-		factory.createBuffer(sizeof(StaticMeshUBO),
+		factory.createBuffer(sizeof(SkeletalMeshUBO),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY,
 			basicBatchResource->uniformBuffers[i]);
@@ -90,4 +90,66 @@ void SkeletalMeshComponent::initBatchResource()
 void SkeletalMeshComponent::destroyBatchResource()
 {
 	ResourceFactory::getInstance().unregisterBatchResource(EPipelineType::SkeletalMesh, batchResource);
+}
+
+
+AnimatorComponent::AnimatorComponent()
+{
+	m_time = 0.0f;
+	m_loop = false;
+	m_playing = false;
+	m_paused = false;
+	m_name.clear();
+}
+
+bool AnimatorComponent::isCompatible(std::shared_ptr<Skeleton> skeleton)
+{
+	for (auto& iter : animations)
+	{
+		if (!iter.second->isCompatible(skeleton))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+void AnimatorComponent::merge(const AnimatorComponent& other)
+{
+	animations.insert(other.animations.begin(), other.animations.end());
+}
+
+void AnimatorComponent::tick(float deltaTime)
+{
+	if (!m_playing || m_paused)
+	{
+		return;
+	}
+
+	m_time += deltaTime;
+}
+
+void AnimatorComponent::play(const std::string& name, bool loop)
+{
+	m_name = name;
+	m_loop = loop;
+	m_playing = true;
+	m_time = 0.0f;
+}
+
+void AnimatorComponent::replay()
+{
+	m_paused = false;
+}
+
+void AnimatorComponent::pause()
+{
+	m_paused = true;
+}
+
+void AnimatorComponent::stop()
+{
+	m_paused = true;
+	m_playing = false;
+	m_time = 0.0f;
 }

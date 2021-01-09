@@ -165,6 +165,7 @@
     <ClCompile Include="core\entity.cpp" />
     <ClCompile Include="core\main.cpp" />
     <ClCompile Include="core\scene.cpp" />
+    <ClCompile Include="core\timer_manager.cpp" />
     <ClCompile Include="input\input_manager.cpp" />
     <ClCompile Include="io\asset_loader.cpp" />
     <ClCompile Include="rendering\framebuffer.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="core\engine_type.h" />
     <ClInclude Include="core\entity.h" />
     <ClInclude Include="core\scene.h" />
+    <ClInclude Include="core\timer_manager.h" />
     <ClInclude Include="input\input_manager.h" />
     <ClInclude Include="io\asset_loader.h" />
     <ClInclude Include="rendering\framebuffer.h" />

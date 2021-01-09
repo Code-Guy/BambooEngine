@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
 struct StaticVertex
@@ -10,7 +11,6 @@ struct StaticVertex
 	glm::vec3 normal;
 };
 
-#define INVALID_BONE -1
 struct SkeletalVertex : public StaticVertex
 {
 	glm::ivec4 bones;

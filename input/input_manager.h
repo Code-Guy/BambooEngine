@@ -3,6 +3,8 @@
 #include <map>
 #include <functional>
 
+typedef uint32_t InputHandle;
+
 class InputManager
 {
 public:
@@ -10,12 +12,12 @@ public:
 	void init(struct GLFWwindow* window);
 	void destroy();
 
-	uint32_t registerKeyPressed(std::function<void(int)> onKeyPressed);
-	uint32_t registerKeyReleased(std::function<void(int)> onKeyReleased);
-	uint32_t registerMouseMoved(std::function<void(float, float)> onMouseMoved);
-	uint32_t registerMouseOffseted(std::function<void(float, float)> onMouseOffseted);
-	uint32_t registerMousePressed(std::function<void(int)> onMousePressed);
-	uint32_t registerMouseReleased(std::function<void(int)> onMouseReleased);
+	InputHandle registerKeyPressed(std::function<void(int)> onKeyPressed);
+	InputHandle registerKeyReleased(std::function<void(int)> onKeyReleased);
+	InputHandle registerMouseMoved(std::function<void(float, float)> onMouseMoved);
+	InputHandle registerMouseOffseted(std::function<void(float, float)> onMouseOffseted);
+	InputHandle registerMousePressed(std::function<void(int)> onMousePressed);
+	InputHandle registerMouseReleased(std::function<void(int)> onMouseReleased);
 
 	void unregisterInputEvent(uint8_t handle);
 
@@ -26,14 +28,14 @@ private:
 
 	struct GLFWwindow* m_window;
 
-	std::map<uint32_t, std::function<void(int)>> m_keyPressedMap;
-	std::map<uint32_t, std::function<void(int)>> m_keyReleasedMap;
-	std::map<uint32_t, std::function<void(float, float)>> m_mouseMovedMap;
-	std::map<uint32_t, std::function<void(float, float)>> m_mouseOffsetedMap;
-	std::map<uint32_t, std::function<void(int)>> m_mousePressedMap;
-	std::map<uint32_t, std::function<void(int)>> m_mouseReleasedMap;
+	std::map<InputHandle, std::function<void(int)>> m_keyPressedMap;
+	std::map<InputHandle, std::function<void(int)>> m_keyReleasedMap;
+	std::map<InputHandle, std::function<void(float, float)>> m_mouseMovedMap;
+	std::map<InputHandle, std::function<void(float, float)>> m_mouseOffsetedMap;
+	std::map<InputHandle, std::function<void(int)>> m_mousePressedMap;
+	std::map<InputHandle, std::function<void(int)>> m_mouseReleasedMap;
 
-	uint32_t m_inputEventHandle;
+	InputHandle m_inputHandle;
 
 	double m_lastMouseX;
 	double m_lastMouseY;

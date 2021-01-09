@@ -10,7 +10,7 @@ InputManager& InputManager::getInstance()
 void InputManager::init(GLFWwindow* window)
 {
 	m_window = window;
-	m_inputEventHandle = 0;
+	m_inputHandle = 0;
 	m_lastMouseX = 0.0;
 	m_lastMouseY = 0.0;
 
@@ -24,40 +24,40 @@ void InputManager::destroy()
 
 }
 
-uint32_t InputManager::registerKeyPressed(std::function<void(int)> onKeyPressed)
+InputHandle InputManager::registerKeyPressed(std::function<void(int)> onKeyPressed)
 {
-	m_keyPressedMap[m_inputEventHandle] = onKeyPressed;
-	return m_inputEventHandle++;
+	m_keyPressedMap[m_inputHandle] = onKeyPressed;
+	return m_inputHandle++;
 }
 
-uint32_t InputManager::registerKeyReleased(std::function<void(int)> onKeyReleased)
+InputHandle InputManager::registerKeyReleased(std::function<void(int)> onKeyReleased)
 {
-	m_keyReleasedMap[m_inputEventHandle] = onKeyReleased;
-	return m_inputEventHandle++;
+	m_keyReleasedMap[m_inputHandle] = onKeyReleased;
+	return m_inputHandle++;
 }
 
-uint32_t InputManager::registerMouseMoved(std::function<void(float, float)> onMouseMoved)
+InputHandle InputManager::registerMouseMoved(std::function<void(float, float)> onMouseMoved)
 {
-	m_mouseMovedMap[m_inputEventHandle] = onMouseMoved;
-	return m_inputEventHandle++;
+	m_mouseMovedMap[m_inputHandle] = onMouseMoved;
+	return m_inputHandle++;
 }
 
-uint32_t InputManager::registerMouseOffseted(std::function<void(float, float)> onMouseOffseted)
+InputHandle InputManager::registerMouseOffseted(std::function<void(float, float)> onMouseOffseted)
 {
-	m_mouseOffsetedMap[m_inputEventHandle] = onMouseOffseted;
-	return m_inputEventHandle++;
+	m_mouseOffsetedMap[m_inputHandle] = onMouseOffseted;
+	return m_inputHandle++;
 }
 
-uint32_t InputManager::registerMousePressed(std::function<void(int)> onMousePressed)
+InputHandle InputManager::registerMousePressed(std::function<void(int)> onMousePressed)
 {
-	m_mousePressedMap[m_inputEventHandle] = onMousePressed;
-	return m_inputEventHandle++;
+	m_mousePressedMap[m_inputHandle] = onMousePressed;
+	return m_inputHandle++;
 }
 
-uint32_t InputManager::registerMouseReleased(std::function<void(int)> onMouseReleased)
+InputHandle InputManager::registerMouseReleased(std::function<void(int)> onMouseReleased)
 {
-	m_mouseReleasedMap[m_inputEventHandle] = onMouseReleased;
-	return m_inputEventHandle++;
+	m_mouseReleasedMap[m_inputHandle] = onMouseReleased;
+	return m_inputHandle++;
 }
 
 void InputManager::unregisterInputEvent(uint8_t handle)

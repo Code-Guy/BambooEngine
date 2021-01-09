@@ -131,7 +131,7 @@ std::vector<VkPipelineShaderStageCreateInfo> SkeletalMeshPipeline::createShaderS
 {
 	// º”‘ÿshader binary code
 	std::vector<char> vertShaderCode = AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_skeletal_vert.spv");
-	std::vector<char> fragShaderCode = AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_frag.spv");
+	std::vector<char> fragShaderCode = AssetLoader::getInstance().loadBinary("asset/shader/spv/blinn_phong_skeletal_frag.spv");
 	VkShaderModule vertShaderModule = ResourceFactory::getInstance().createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = ResourceFactory::getInstance().createShaderModule(fragShaderCode);
 

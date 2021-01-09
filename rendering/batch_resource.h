@@ -14,7 +14,7 @@ struct StaticMeshUBO
 
 struct SkeletalMeshUBO
 {
-	glm::mat4 padding;
+	glm::mat4 gBones[MAX_BONE_NUM];
 };
 
 struct VPCO

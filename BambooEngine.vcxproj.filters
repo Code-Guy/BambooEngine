@@ -67,6 +67,9 @@
     <ClCompile Include="component\animation.cpp">
       <Filter>component</Filter>
     </ClCompile>
+    <ClCompile Include="core\timer_manager.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="core">
@@ -166,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="component\mesh.h">
       <Filter>component</Filter>
+    </ClInclude>
+    <ClInclude Include="core\timer_manager.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

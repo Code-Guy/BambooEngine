@@ -22,6 +22,7 @@ layout(location = 4) in vec4 inWeights;
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec3 outPosition;
+layout(location = 3) out vec4 outColor;
 
 void main()
 {
@@ -30,4 +31,5 @@ void main()
 	outTexCoord = inTexCoord;
 	outNormal = (vpco.m * vec4(inNormal, 0.0)).xyz;
 	outPosition = (vpco.m * vec4(inPosition, 1.0)).xyz;
+	outColor = vec4(inBones) / 68.0;
 }
