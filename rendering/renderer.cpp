@@ -26,7 +26,27 @@ void Renderer::init(std::shared_ptr<GraphicsBackend>& backend)
 	createSyncObjects();
 }
 
-void Renderer::render()
+void Renderer::destroy()
+{
+	cleanupSwapchain();
+
+	for (const auto& iter : m_pipelines)
+	{
+		iter.second->destroy();
+	}
+	m_renderPass.destroy();
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		vkDestroySemaphore(m_backend->getDevice(), m_renderFinishedSemaphores[i], nullptr);
+		vkDestroySemaphore(m_backend->getDevice(), m_imageAvailableSemaphores[i], nullptr);
+		vkDestroyFence(m_backend->getDevice(), m_inFlightFences[i], nullptr);
+	}
+
+	vkDestroyCommandPool(m_backend->getDevice(), m_commandPool, nullptr);
+}
+
+void Renderer::wait()
 {
 	// 等待指令提交完毕
 	vkWaitForFences(m_backend->getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
@@ -51,10 +71,98 @@ void Renderer::render()
 		vkWaitForFences(m_backend->getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 	}
 	m_imagesInFlight[m_imageIndex] = m_inFlightFences[m_currentFrame];
+}
 
-	// 更新Command Buffer
-	updateCommandBuffer(m_imageIndex);
+void Renderer::update()
+{
+	VkCommandBuffer commandBuffer = m_commandBuffers[m_imageIndex];
+	vkResetCommandBuffer(commandBuffer, 0);
 
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0;
+	beginInfo.pInheritanceInfo = nullptr;
+
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_renderPass.get();
+	renderPassInfo.framebuffer = m_swapchainFramebuffers[m_imageIndex].get();
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_swapchain.getExtent();
+
+	std::vector<VkClearValue> clearValues(2, VkClearValue{});
+	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	clearValues[1].depthStencil = { 1.0f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());;
+	renderPassInfo.pClearValues = clearValues.data();
+
+	// Viewports and Scissors
+	// Viewport定义了屏幕变换
+	VkExtent2D swapchainExtent = m_swapchain.getExtent();
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(swapchainExtent.width);
+	viewport.height = static_cast<float>(swapchainExtent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	// Scissor定义了裁剪区域，被裁剪的部分会被栅格器丢弃，不进行fragment shader计算）
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = swapchainExtent;
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	for (const auto& iter : m_pipelines)
+	{
+		auto& pipeline = iter.second;
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->get());
+
+		auto& batchResources = pipeline->getBatchResources();
+		for (auto& batchResource : batchResources)
+		{
+			VkBuffer vertexBuffers[] = { batchResource->vertexBuffer.buffer };
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+			pipeline->pushConstants(commandBuffer, batchResource);
+
+			std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
+			size_t sectionCount = indexCounts.size();
+			uint32_t indexOffset = 0;
+			for (size_t j = 0; j < sectionCount; ++j)
+			{
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayout(),
+					0, 1, &batchResource->descriptorSets[m_imageIndex * sectionCount + j], 0, nullptr);
+
+				uint32_t indexCount = indexCounts[j] - indexOffset;
+				vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
+				indexOffset = indexCounts[j];
+			}
+		}
+	}
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+void Renderer::submit()
+{
 	// Submit command buffer
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -67,22 +175,25 @@ void Renderer::render()
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_commandBuffers[m_imageIndex];
 
-	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	m_signalSemaphores = { m_renderFinishedSemaphores[m_currentFrame] };
+	submitInfo.signalSemaphoreCount = static_cast<uint32_t>(m_signalSemaphores.size());
+	submitInfo.pSignalSemaphores = m_signalSemaphores.data();
 
 	vkResetFences(m_backend->getDevice(), 1, &m_inFlightFences[m_currentFrame]);
 	if (vkQueueSubmit(m_backend->getGraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
+}
 
+void Renderer::present()
+{
 	// Present
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
+	presentInfo.waitSemaphoreCount = static_cast<uint32_t>(m_signalSemaphores.size());
+	presentInfo.pWaitSemaphores = m_signalSemaphores.data();
 
 	VkSwapchainKHR swapchains[] = { m_swapchain.get() };
 	presentInfo.swapchainCount = 1;
@@ -90,7 +201,7 @@ void Renderer::render()
 	presentInfo.pImageIndices = &m_imageIndex;
 	presentInfo.pResults = nullptr;
 
-	result = vkQueuePresentKHR(m_backend->getPresentQueue(), &presentInfo);
+	VkResult result = vkQueuePresentKHR(m_backend->getPresentQueue(), &presentInfo);
 
 	// 检测是否要重建交换链
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
@@ -104,26 +215,6 @@ void Renderer::render()
 	}
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-void Renderer::destroy()
-{
-	cleanupSwapchain();
-
-	for (const auto& iter : m_pipelines)
-	{
-		iter.second->destroy();
-	}
-	m_renderPass.destroy();
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-	{
-		vkDestroySemaphore(m_backend->getDevice(), m_renderFinishedSemaphores[i], nullptr);
-		vkDestroySemaphore(m_backend->getDevice(), m_imageAvailableSemaphores[i], nullptr);
-		vkDestroyFence(m_backend->getDevice(), m_inFlightFences[i], nullptr);
-	}
-
-	vkDestroyCommandPool(m_backend->getDevice(), m_commandPool, nullptr);
 }
 
 glm::ivec2 Renderer::getViewportSize()
@@ -260,92 +351,4 @@ void Renderer::cleanupSwapchain()
 	}
 
 	m_swapchain.destroy();
-}
-
-void Renderer::updateCommandBuffer(uint32_t m_imageIndex)
-{
-	VkCommandBuffer commandBuffer = m_commandBuffers[m_imageIndex];
-	vkResetCommandBuffer(commandBuffer, 0);
-
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0;
-	beginInfo.pInheritanceInfo = nullptr;
-
-	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
-
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_renderPass.get();
-	renderPassInfo.framebuffer = m_swapchainFramebuffers[m_imageIndex].get();
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_swapchain.getExtent();
-
-	std::vector<VkClearValue> clearValues(2, VkClearValue{});
-	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-	clearValues[1].depthStencil = { 1.0f, 0 };
-
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());;
-	renderPassInfo.pClearValues = clearValues.data();
-
-	// Viewports and Scissors
-	// Viewport定义了屏幕变换
-	VkExtent2D swapchainExtent = m_swapchain.getExtent();
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(swapchainExtent.width);
-	viewport.height = static_cast<float>(swapchainExtent.height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	// Scissor定义了裁剪区域，被裁剪的部分会被栅格器丢弃，不进行fragment shader计算）
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = swapchainExtent;
-
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-	for (const auto& iter : m_pipelines)
-	{
-		auto& pipeline = iter.second;
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->get());
-
-		auto& batchResources = pipeline->getBatchResources();
-		for (auto& batchResource : batchResources)
-		{
-			VkBuffer vertexBuffers[] = { batchResource->vertexBuffer.buffer };
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, batchResource->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-			pipeline->pushConstants(commandBuffer, batchResource);
-
-			std::vector<uint32_t>& indexCounts = batchResource->indexCounts;
-			size_t sectionCount = indexCounts.size();
-			uint32_t indexOffset = 0;
-			for (size_t j = 0; j < sectionCount; ++j)
-			{
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayout(),
-					0, 1, &batchResource->descriptorSets[m_imageIndex * sectionCount + j], 0, nullptr);
-
-				uint32_t indexCount = indexCounts[j] - indexOffset;
-				vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
-				indexOffset = indexCounts[j];
-			}
-		}
-	}
-
-	vkCmdEndRenderPass(commandBuffer);
-
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to record command buffer!");
-	}
 }

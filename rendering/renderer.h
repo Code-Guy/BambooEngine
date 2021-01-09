@@ -16,15 +16,19 @@ class Renderer
 {
 public:
 	void init(std::shared_ptr<class GraphicsBackend>& backend);
-	void render();
 	void destroy();
 
-	void onFramebufferResized() { m_framebufferResized = true; }
+	void wait();
+	void update();
+	void submit();
+	void present();
 
 	std::shared_ptr<class GraphicsBackend> getBackend() { return m_backend; }
 	std::shared_ptr<Pipeline> getPipeline(EPipelineType pipelineType) { return m_pipelines[pipelineType]; }
 	uint32_t getImageIndex() { return m_imageIndex; }
 	glm::ivec2 getViewportSize();
+
+	void onFramebufferResized() { m_framebufferResized = true; }
 
 private:
 	void createCommandPool();
@@ -36,8 +40,6 @@ private:
 
 	void recreateSwapchain();
 	void cleanupSwapchain();
-
-	void updateCommandBuffer(uint32_t imageIndex);
 
 	std::shared_ptr<GraphicsBackend> m_backend;
 
@@ -56,6 +58,7 @@ private:
 	const size_t MAX_FRAMES_IN_FLIGHT = 2;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkSemaphore> m_signalSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame = 0;

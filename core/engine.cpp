@@ -47,8 +47,13 @@ void Engine::run()
 	{
 		glfwPollEvents();
 
+		m_renderer->wait();
+
 		m_scene->tick(m_deltaTime);
-		m_renderer->render();
+
+		m_renderer->update();
+		m_renderer->submit();
+		m_renderer->present();
 
 		evaluateTime();
 	}

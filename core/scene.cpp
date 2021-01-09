@@ -123,6 +123,16 @@ void Scene::tick(float deltaTime)
 	{
 		m_camera->setAspect(static_cast<float>(viewportSize.x) / viewportSize.y);
 	}
+
+	// 更新动画，上传骨骼数据
+	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([this](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
+		TransformComponent transform;
+		transform.rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
+		//transform.position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
+		glm::mat4 mat = transform.calcModelMatrix();
+		animatorComp.gBones[0] = mat;
+		skeletalMeshComp.updateUniformBuffer(m_renderer, sizeof(SkeletalMeshUBO), static_cast<void*>(animatorComp.gBones));
+	});
 }
 
 void Scene::end()
@@ -166,6 +176,7 @@ void Scene::tickTransform(float deltaTime)
 
 	// 更新TransformComponent
 	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
+	m_entities["mannequin"]->getComponent<TransformComponent>().position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
 	m_rootEntity->tick();
 
 	// 更新StaticMeshComponent
@@ -192,11 +203,5 @@ void Scene::tickEvent(float deltaTime)
 
 void Scene::tickAnimation(float deltaTime)
 {
-	// 更新SkeletalMeshComponent
-	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([this](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
-		size_t size = sizeof(SkeletalMeshUBO);
-		glm::mat4 mat = m_entities["dragon"]->getComponent<TransformComponent>().calcModelMatrix();
-		animatorComp.gBones[0] = mat;
-		skeletalMeshComp.updateUniformBuffer(m_renderer, size, static_cast<void*>(animatorComp.gBones));
-	});
+
 }
