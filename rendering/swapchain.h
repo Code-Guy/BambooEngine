@@ -6,7 +6,7 @@
 class Swapchain
 {
 public:
-	void init(std::shared_ptr<GraphicsBackend>& backend);
+	void init(std::shared_ptr<class GraphicsBackend>& backend);
 	void destroy();
 
 	VkSwapchainKHR get() { return m_swapchain; }
@@ -21,7 +21,7 @@ private:
 	VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D pickSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-	std::shared_ptr<GraphicsBackend> m_backend;
+	std::shared_ptr<class GraphicsBackend> m_backend;
 
 	VkSwapchainKHR m_swapchain;
 	std::vector<VkImage> m_swapchainImages;

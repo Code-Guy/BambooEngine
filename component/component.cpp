@@ -1,7 +1,17 @@
 #include "component/component.h"
 #include "rendering/resource_factory.h"
+#include "rendering/renderer.h"
 
-void StaticMeshComponent::initBatchResource()
+void MeshComponent::updateUniformBuffer(std::shared_ptr<class Renderer> renderer, size_t bufferSize, void* bufferData)
+{
+	void* data;
+	VmaAllocation uniformBufferAllocation = batchResource->uniformBuffers[renderer->getImageIndex()].allocation;
+	vmaMapMemory(renderer->getBackend()->getAllocator(), uniformBufferAllocation, &data);
+	memcpy(data, bufferData, bufferSize);
+	vmaUnmapMemory(renderer->getBackend()->getAllocator(), uniformBufferAllocation);
+}
+
+void StaticMeshComponent::initBatchResource(std::shared_ptr<class Renderer> renderer)
 {
 	// 创建BasicBatchResource
 	auto& factory = ResourceFactory::getInstance();
@@ -38,16 +48,17 @@ void StaticMeshComponent::initBatchResource()
 
 	// 注册到StaticMeshPipeline里
 	batchResource = basicBatchResource;
-	factory.registerBatchResource(EPipelineType::StaticMesh, batchResource);
+	renderer->getPipeline(EPipelineType::StaticMesh)->registerBatchResource(batchResource);
 }
 
-void StaticMeshComponent::destroyBatchResource()
+void StaticMeshComponent::destroyBatchResource(std::shared_ptr<class Renderer> renderer)
 {
-	ResourceFactory::getInstance().unregisterBatchResource(EPipelineType::StaticMesh, batchResource);
+	batchResource->destroy(renderer->getBackend()->getDevice(), renderer->getBackend()->getAllocator());
+	renderer->getPipeline(EPipelineType::StaticMesh)->unregisterBatchResource(batchResource);
 }
 
 
-void SkeletalMeshComponent::initBatchResource()
+void SkeletalMeshComponent::initBatchResource(std::shared_ptr<class Renderer> renderer)
 {
 	// 创建BasicBatchResource
 	auto& factory = ResourceFactory::getInstance();
@@ -84,12 +95,13 @@ void SkeletalMeshComponent::initBatchResource()
 
 	// 注册到StaticMeshPipeline里
 	batchResource = basicBatchResource;
-	factory.registerBatchResource(EPipelineType::SkeletalMesh, batchResource);
+	renderer->getPipeline(EPipelineType::SkeletalMesh)->registerBatchResource(batchResource);
 }
 
-void SkeletalMeshComponent::destroyBatchResource()
+void SkeletalMeshComponent::destroyBatchResource(std::shared_ptr<class Renderer> renderer)
 {
-	ResourceFactory::getInstance().unregisterBatchResource(EPipelineType::SkeletalMesh, batchResource);
+	batchResource->destroy(renderer->getBackend()->getDevice(), renderer->getBackend()->getAllocator());
+	renderer->getPipeline(EPipelineType::SkeletalMesh)->unregisterBatchResource(batchResource);
 }
 
 

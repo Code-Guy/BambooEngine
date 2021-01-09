@@ -10,7 +10,7 @@
 class Pipeline
 {
 public:
-	void init(std::shared_ptr<GraphicsBackend> backend, VkRenderPass renderPass);
+	void init(std::shared_ptr<class GraphicsBackend> backend, VkRenderPass renderPass);
 	void destroy();
 
 	VkPipeline get() { return m_pipeline; }
@@ -32,7 +32,7 @@ protected:
 
 	virtual void createDescriptorSets(std::shared_ptr<BatchResource> batchResource) = 0;
 
-	std::shared_ptr<GraphicsBackend> m_backend;
+	std::shared_ptr<class GraphicsBackend> m_backend;
 	VkRenderPass m_renderPass;
 
 	VkDescriptorSetLayout m_descriptorSetLayout;

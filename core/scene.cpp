@@ -3,19 +3,23 @@
 #include "input/input_manager.h"
 #include "component/component.h"
 #include "io/asset_loader.h"
+#include "rendering/renderer.h"
 #include "utility/utility.h"
 
-void Scene::init(uint32_t width, uint32_t height)
+void Scene::init(std::shared_ptr<class Renderer> renderer)
 {
+	m_renderer = renderer;
+
 	// 初始化计时管理器
 	m_timerManager = std::make_shared<TimerManager>();
 	m_timerManager->addTimer(0.0166f, std::bind(&Scene::tickTransform, this, std::placeholders::_1), true);
+	//m_timerManager->addTimer(0.5f, std::bind(&Scene::tickEvent, this, std::placeholders::_1), true);
+	m_timerManager->addTimer(0.0333f, std::bind(&Scene::tickAnimation, this, std::placeholders::_1), true);
 
 	// 初始化摄像机
 	m_camera = std::make_unique<Camera>(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 50.0f, 0.1f);
 	m_camera->setFovy(45.0f);
 	m_camera->setClipping(0.1f, 1000.0f);
-	m_camera->setAspect((float)width / height);
 
 	// 绑定摄像机输入事件
 	InputManager::getInstance().registerKeyPressed(std::bind(&Camera::onKeyPressed, m_camera.get(), std::placeholders::_1));
@@ -94,12 +98,12 @@ void Scene::destroy()
 
 void Scene::pre()
 {
-	m_registry.view<StaticMeshComponent>().each([](auto entity, StaticMeshComponent& staticMeshComp) {
-		staticMeshComp.initBatchResource();
+	m_registry.view<StaticMeshComponent>().each([this](auto entity, StaticMeshComponent& staticMeshComp) {
+		staticMeshComp.initBatchResource(m_renderer);
 	});
 
-	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
-		skeletalMeshComp.initBatchResource();
+	m_registry.view<SkeletalMeshComponent>().each([this](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
+		skeletalMeshComp.initBatchResource(m_renderer);
 	});
 }
 
@@ -110,7 +114,15 @@ void Scene::begin()
 
 void Scene::tick(float deltaTime)
 {
+	// 更新计时器管理器
 	m_timerManager->tick(deltaTime);
+
+	// 更新相机画面长宽比
+	glm::ivec2 viewportSize = m_renderer->getViewportSize();
+	if (viewportSize.x != 0 && viewportSize.y != 0)
+	{
+		m_camera->setAspect(static_cast<float>(viewportSize.x) / viewportSize.y);
+	}
 }
 
 void Scene::end()
@@ -120,12 +132,12 @@ void Scene::end()
 
 void Scene::post()
 {
-	m_registry.view<StaticMeshComponent>().each([](auto entity, auto& staticMeshComp) {
-		staticMeshComp.destroyBatchResource();
+	m_registry.view<StaticMeshComponent>().each([this](auto entity, auto& staticMeshComp) {
+		staticMeshComp.destroyBatchResource(m_renderer);
 	});
 
-	m_registry.view<SkeletalMeshComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
-		skeletalMeshComp.destroyBatchResource();
+	m_registry.view<SkeletalMeshComponent>().each([this](auto entity, SkeletalMeshComponent& skeletalMeshComp) {
+		skeletalMeshComp.destroyBatchResource(m_renderer);
 	});
 }
 
@@ -142,14 +154,6 @@ std::shared_ptr<Entity> Scene::createEntity(const std::string& name)
 	return entity;
 }
 
-void Scene::onViewportSize(uint32_t width, uint32_t height)
-{
-	if (width != 0 && height != 0)
-	{
-		m_camera->setAspect((float)width / height);
-	}
-}
-
 void Scene::removeEntity(const std::string& name)
 {
 	m_entities.erase(name);
@@ -161,7 +165,7 @@ void Scene::tickTransform(float deltaTime)
 	m_camera->tick(deltaTime);
 
 	// 更新TransformComponent
-	m_entities["mannequin"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
+	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
 	m_rootEntity->tick();
 
 	// 更新StaticMeshComponent
@@ -181,7 +185,18 @@ void Scene::tickTransform(float deltaTime)
 	});
 }
 
-void Scene::tickAnimation(float deltaTime)
+void Scene::tickEvent(float deltaTime)
 {
 
+}
+
+void Scene::tickAnimation(float deltaTime)
+{
+	// 更新SkeletalMeshComponent
+	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([this](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
+		size_t size = sizeof(SkeletalMeshUBO);
+		glm::mat4 mat = m_entities["dragon"]->getComponent<TransformComponent>().calcModelMatrix();
+		animatorComp.gBones[0] = mat;
+		skeletalMeshComp.updateUniformBuffer(m_renderer, size, static_cast<void*>(animatorComp.gBones));
+	});
 }

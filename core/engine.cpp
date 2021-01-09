@@ -21,13 +21,11 @@ void Engine::init()
 	m_backend->setOnFramebufferResized(std::bind(&Engine::onViewportResized, this, std::placeholders::_1, std::placeholders::_2));
 	m_backend->init(width, height);
 
-	// 创建渲染器
-	m_renderer = std::make_shared<Renderer>();
-
 	// 初始化渲染资源工厂
-	ResourceFactory::getInstance().init(m_backend, m_renderer);
+	ResourceFactory::getInstance().init(m_backend);
 
 	// 初始化渲染器
+	m_renderer = std::make_shared<Renderer>();
 	m_renderer->init(m_backend);
 
 	// 初始化输入管理器
@@ -35,7 +33,7 @@ void Engine::init()
 
 	// 初始化场景
 	m_scene = std::make_shared<class Scene>();
-	m_scene->init(width, height);
+	m_scene->init(m_renderer);
 }
 
 void Engine::run()
@@ -78,16 +76,14 @@ void Engine::evaluateTime()
 	// 计算当前帧所花的时间，计算帧率
 	std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
 	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(endTime - m_beginTime).count();
+	m_beginTime = endTime;
 
 	char title[100];
 	snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / m_deltaTime));
 	glfwSetWindowTitle(m_backend->getWindow(), title);
-
-	m_beginTime = std::chrono::steady_clock::now();
 }
 
 void Engine::onViewportResized(uint32_t width, uint32_t height)
 {
 	m_renderer->onFramebufferResized();
-	m_scene->onViewportSize(width, height);
 }

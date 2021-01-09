@@ -15,13 +15,16 @@
 class Renderer
 {
 public:
-	void init(std::shared_ptr<GraphicsBackend>& backend);
+	void init(std::shared_ptr<class GraphicsBackend>& backend);
 	void render();
 	void destroy();
 
 	void onFramebufferResized() { m_framebufferResized = true; }
 
+	std::shared_ptr<class GraphicsBackend> getBackend() { return m_backend; }
 	std::shared_ptr<Pipeline> getPipeline(EPipelineType pipelineType) { return m_pipelines[pipelineType]; }
+	uint32_t getImageIndex() { return m_imageIndex; }
+	glm::ivec2 getViewportSize();
 
 private:
 	void createCommandPool();
@@ -56,6 +59,7 @@ private:
 	std::vector<VkFence> m_inFlightFences;
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame = 0;
+	uint32_t m_imageIndex;
 
 	bool m_framebufferResized;
 };

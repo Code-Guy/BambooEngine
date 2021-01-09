@@ -28,6 +28,4 @@ private:
 		uint32_t baseIndex, std::vector<uint32_t>& indices, std::vector<Section>& sections);
 	void processStaticVertices(struct aiMesh* assMesh, const struct aiScene* assScene, std::vector<StaticVertex>& staticVertices);
 	void processSkeletalVertices(struct aiMesh* assMesh, const struct aiScene* assScene, std::vector<SkeletalVertex>& skeletalVertices);
-
-
 };

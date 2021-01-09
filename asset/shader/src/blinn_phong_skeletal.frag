@@ -13,7 +13,6 @@ layout(binding = 1) uniform sampler2D texSampler;
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec3 inPosition;
-layout(location = 3) in vec4 inColor;
 
 layout(location = 0) out vec4 outColor;
 
@@ -37,5 +36,4 @@ void main()
 	float specular = pow(max(dot(halfwayDirection, inNormal), 0.0), shininess);
 
 	outColor = vec4(baseColor * ambient + baseColor * lightColor * diffuse + lightColor * specular, 1.0);
-	outColor = inColor;
 }

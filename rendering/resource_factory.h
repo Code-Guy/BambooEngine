@@ -7,11 +7,8 @@ class ResourceFactory
 {
 public:
 	static ResourceFactory& getInstance();
-	void init(std::shared_ptr<class GraphicsBackend>& backend, std::shared_ptr<class Renderer> renderer);
+	void init(std::shared_ptr<class GraphicsBackend>& backend);
 	void destroy();
-
-	void registerBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource);
-	void unregisterBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource);
 
 	void createVertexBuffer(uint32_t bufferSize, void* verticesData, VmaBuffer& vertexBuffer);
 	void createIndexBuffer(const std::vector<uint32_t>& indices, VmaBuffer& indexBuffer);
@@ -38,6 +35,5 @@ private:
 	void endInstantCommands(VkCommandBuffer commandBuffer);
 
 	std::shared_ptr<class GraphicsBackend> m_backend;
-	std::shared_ptr<class Renderer> m_renderer; 
 	VkCommandPool m_instantCommandPool;
 };

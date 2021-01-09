@@ -45,11 +45,11 @@ struct TransformComponent : public Component
 	{
 		glm::mat4 modelMatrix(1.0f);
 
-		modelMatrix = glm::scale(modelMatrix, scale);
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.z), UpVector);
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.y), RightVector);
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), ForwardVector);
 		modelMatrix = glm::translate(modelMatrix, position);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), ForwardVector);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.y), RightVector);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.z), UpVector);
+		modelMatrix = glm::scale(modelMatrix, scale);
 
 		return modelMatrix;
 	}
@@ -69,31 +69,31 @@ struct MeshComponent : public Component
 		return !sections.empty();
 	}
 
-	virtual void initBatchResource() = 0;
-	virtual void destroyBatchResource() = 0;
+	virtual void initBatchResource(std::shared_ptr<class Renderer> renderer) = 0;
+	virtual void destroyBatchResource(std::shared_ptr<class Renderer> renderer) = 0;
+	virtual void updateUniformBuffer(std::shared_ptr<class Renderer> renderer, size_t bufferSize, void* bufferData);
 
 	std::vector<Section> sections;
+	std::shared_ptr<BasicBatchResource> batchResource;
 };
 
 /* Static Mesh */
 struct StaticMeshComponent : public MeshComponent
 {
-	virtual void initBatchResource() override;
-	virtual void destroyBatchResource() override;
+	virtual void initBatchResource(std::shared_ptr<class Renderer> renderer) override;
+	virtual void destroyBatchResource(std::shared_ptr<class Renderer> renderer) override;
 
 	std::shared_ptr<StaticMesh> mesh;
-	std::shared_ptr<BasicBatchResource> batchResource;
 };
 
 /* Skeletal Mesh */
 struct SkeletalMeshComponent : public MeshComponent
 {
-	virtual void initBatchResource() override;
-	virtual void destroyBatchResource() override;
+	virtual void initBatchResource(std::shared_ptr<class Renderer> renderer) override;
+	virtual void destroyBatchResource(std::shared_ptr<class Renderer> renderer) override;
 
 	std::shared_ptr<Skeleton> skeleton;
 	std::shared_ptr<SkeletalMesh> mesh;
-	std::shared_ptr<BasicBatchResource> batchResource;
 };
 
 /* Animator */

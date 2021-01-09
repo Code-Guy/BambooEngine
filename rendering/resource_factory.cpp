@@ -1,6 +1,5 @@
 #include "resource_factory.h"
 #include "graphics_backend.h"
-#include "renderer.h"
 
 #include <stb_image/stb_image.h>
 
@@ -10,10 +9,9 @@ ResourceFactory& ResourceFactory::getInstance()
 	return factory;
 }
 
-void ResourceFactory::init(std::shared_ptr<GraphicsBackend>& backend, std::shared_ptr<class Renderer> renderer)
+void ResourceFactory::init(std::shared_ptr<GraphicsBackend>& backend)
 {
 	m_backend = backend;
-	m_renderer = renderer;
 
 	// 创建短时指令池
 	createInstantCommandPool();
@@ -22,17 +20,6 @@ void ResourceFactory::init(std::shared_ptr<GraphicsBackend>& backend, std::share
 void ResourceFactory::destroy()
 {
 	vkDestroyCommandPool(m_backend->getDevice(), m_instantCommandPool, nullptr);
-}
-
-void ResourceFactory::registerBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource)
-{
-	m_renderer->getPipeline(pipelineType)->registerBatchResource(batchResource);
-}
-
-void ResourceFactory::unregisterBatchResource(EPipelineType pipelineType, std::shared_ptr<BatchResource> batchResource)
-{
-	batchResource->destroy(m_backend->getDevice(), m_backend->getAllocator());
-	m_renderer->getPipeline(pipelineType)->unregisterBatchResource(batchResource);
 }
 
 void ResourceFactory::createVertexBuffer(uint32_t bufferSize, void* verticesData, VmaBuffer& vertexBuffer)

@@ -32,8 +32,7 @@ void Renderer::render()
 	vkWaitForFences(m_backend->getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 	// 获取当前可用Image的索引，这里会等待交换链有空闲的Image
-	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(m_backend->getDevice(), m_swapchain.get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_backend->getDevice(), m_swapchain.get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_imageIndex);
 
 	// 检测是否要重建交换链
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -47,14 +46,14 @@ void Renderer::render()
 	}
 
 	// 如果当前Image正在被CPU提交数据，等待CPU
-	if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
+	if (m_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
 	{
 		vkWaitForFences(m_backend->getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 	}
-	m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
+	m_imagesInFlight[m_imageIndex] = m_inFlightFences[m_currentFrame];
 
 	// 更新Command Buffer
-	updateCommandBuffer(imageIndex);
+	updateCommandBuffer(m_imageIndex);
 
 	// Submit command buffer
 	VkSubmitInfo submitInfo{};
@@ -66,7 +65,7 @@ void Renderer::render()
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &m_commandBuffers[m_imageIndex];
 
 	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
@@ -88,7 +87,7 @@ void Renderer::render()
 	VkSwapchainKHR swapchains[] = { m_swapchain.get() };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapchains;
-	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pImageIndices = &m_imageIndex;
 	presentInfo.pResults = nullptr;
 
 	result = vkQueuePresentKHR(m_backend->getPresentQueue(), &presentInfo);
@@ -125,6 +124,14 @@ void Renderer::destroy()
 	}
 
 	vkDestroyCommandPool(m_backend->getDevice(), m_commandPool, nullptr);
+}
+
+glm::ivec2 Renderer::getViewportSize()
+{
+	int width = 0;
+	int height = 0;
+	glfwGetFramebufferSize(m_backend->getWindow(), &width, &height);
+	return glm::ivec2(width, height);
 }
 
 void Renderer::createCommandPool()
@@ -255,9 +262,9 @@ void Renderer::cleanupSwapchain()
 	m_swapchain.destroy();
 }
 
-void Renderer::updateCommandBuffer(uint32_t imageIndex)
+void Renderer::updateCommandBuffer(uint32_t m_imageIndex)
 {
-	VkCommandBuffer commandBuffer = m_commandBuffers[imageIndex];
+	VkCommandBuffer commandBuffer = m_commandBuffers[m_imageIndex];
 	vkResetCommandBuffer(commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -273,7 +280,7 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_renderPass.get();
-	renderPassInfo.framebuffer = m_swapchainFramebuffers[imageIndex].get();
+	renderPassInfo.framebuffer = m_swapchainFramebuffers[m_imageIndex].get();
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = m_swapchain.getExtent();
 
@@ -326,7 +333,7 @@ void Renderer::updateCommandBuffer(uint32_t imageIndex)
 			for (size_t j = 0; j < sectionCount; ++j)
 			{
 				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayout(),
-					0, 1, &batchResource->descriptorSets[imageIndex * sectionCount + j], 0, nullptr);
+					0, 1, &batchResource->descriptorSets[m_imageIndex * sectionCount + j], 0, nullptr);
 
 				uint32_t indexCount = indexCounts[j] - indexOffset;
 				vkCmdDrawIndexed(commandBuffer, indexCount, 1, indexOffset, 0, 0);
