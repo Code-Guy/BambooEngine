@@ -13,8 +13,8 @@ void Scene::init(std::shared_ptr<class Renderer> renderer)
 	// 初始化计时管理器
 	m_timerManager = std::make_shared<TimerManager>();
 	m_timerManager->addTimer(0.0166f, std::bind(&Scene::tickTransform, this, std::placeholders::_1), true);
-	//m_timerManager->addTimer(0.5f, std::bind(&Scene::tickEvent, this, std::placeholders::_1), true);
 	m_timerManager->addTimer(0.0333f, std::bind(&Scene::tickAnimation, this, std::placeholders::_1), true);
+	//m_timerManager->addTimer(0.5f, std::bind(&Scene::tickEvent, this, std::placeholders::_1), true);
 
 	// 初始化摄像机
 	m_camera = std::make_unique<Camera>(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 50.0f, 0.1f);
@@ -176,7 +176,7 @@ void Scene::tickTransform(float deltaTime)
 
 	// 更新TransformComponent
 	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
-	m_entities["mannequin"]->getComponent<TransformComponent>().position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
+	//m_entities["mannequin"]->getComponent<TransformComponent>().position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
 	m_rootEntity->tick();
 
 	// 更新StaticMeshComponent
@@ -196,12 +196,12 @@ void Scene::tickTransform(float deltaTime)
 	});
 }
 
-void Scene::tickEvent(float deltaTime)
+void Scene::tickAnimation(float deltaTime)
 {
 
 }
 
-void Scene::tickAnimation(float deltaTime)
+void Scene::tickEvent(float deltaTime)
 {
 
 }
