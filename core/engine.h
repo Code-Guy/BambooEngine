@@ -19,5 +19,6 @@ private:
 	std::shared_ptr<class Scene> m_scene;
 
 	std::chrono::steady_clock::time_point m_lastTime;
+	std::chrono::steady_clock::time_point m_lastTimeAfterSleep;
 	float m_deltaTime;
 };

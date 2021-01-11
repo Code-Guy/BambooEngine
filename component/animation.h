@@ -1,11 +1,10 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <string>
 #include <vector>
 #include <map>
 #include <memory>
+#include "core/engine_type.h"
 
 struct Bone
 {
@@ -15,23 +14,43 @@ struct Bone
 
 	Bone* parent = nullptr;
 	std::vector<Bone*> children;
+
+	QuatTransform transform;
+
+	void update();
 };
 
 struct Skeleton
 {
 	std::vector<Bone> bones;
 	std::map<std::string, uint8_t> nameIndexMap;
+
+	bool hasBone(const std::string& name);
+	Bone& getBone(const std::string& name);
+
+	void update();
+
+private:
+	Bone invalidBone;
 };
 
-struct VectorKey
+struct AnimKey
 {
 	float time;
+
+	bool operator<(const AnimKey& other) const
+	{
+		return time < other.time;
+	}
+};
+
+struct VectorKey : public AnimKey
+{
 	glm::vec3 value;
 };
 
-struct QuatKey
+struct QuatKey : public AnimKey
 {
-	float time;
 	glm::quat value;
 };
 

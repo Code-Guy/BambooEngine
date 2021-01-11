@@ -43,18 +43,17 @@ void Engine::run()
 	m_scene->begin();
 
 	m_lastTime = std::chrono::steady_clock::now();
-	m_lastTime = std::chrono::steady_clock::now();
+	m_lastTimeAfterSleep = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(m_backend->getWindow()))
 	{
 		glfwPollEvents();
+		evaluateTime();
 
 		m_renderer->wait();
 		m_scene->tick(m_deltaTime);
 		m_renderer->update();
 		m_renderer->submit();
 		m_renderer->present();
-
-		evaluateTime();
 	}
 
 	vkDeviceWaitIdle(m_backend->getDevice());
@@ -80,19 +79,20 @@ void Engine::evaluateTime(int targetFPS)
 	// 计算当前帧所花的时间，计算帧率
 	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
 	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTime).count();
+	m_lastTime = currentTime;
 
 	if (targetFPS != 0)
 	{
-		long long deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - m_lastTime).count();
-		long long sleepTime = std::max(static_cast<long long>(1e9 / targetFPS) - deltaTime, 0ll);
-		
+		long long renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - m_lastTimeAfterSleep).count();
+		long long sleepTime = std::max(static_cast<long long>(1e9 / targetFPS) - renderTime, 0ll);
+		m_lastTimeAfterSleep = currentTime + std::chrono::nanoseconds(sleepTime);
+
 		if (sleepTime > 0ll)
 		{
 			std::this_thread::sleep_for(std::chrono::nanoseconds(sleepTime));
 		}
+		//m_lastTimeAfterSleep = std::chrono::steady_clock::now();
 	}
-
-	m_lastTime = currentTime;
 
 	char title[100];
 	snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / m_deltaTime));

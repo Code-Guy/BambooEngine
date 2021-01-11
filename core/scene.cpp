@@ -129,7 +129,7 @@ void Scene::tick(float deltaTime)
 		TransformComponent transform;
 		transform.rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
 		//transform.position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
-		glm::mat4 mat = transform.calcModelMatrix();
+		glm::mat4 mat = transform.matrix();
 		animatorComp.gBones[0] = mat;
 		skeletalMeshComp.updateUniformBuffer(m_renderer, sizeof(SkeletalMeshUBO), static_cast<void*>(animatorComp.gBones));
 	});
@@ -177,7 +177,7 @@ void Scene::tickTransform(float deltaTime)
 	// 更新TransformComponent
 	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
 	//m_entities["mannequin"]->getComponent<TransformComponent>().position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
-	m_rootEntity->tick();
+	m_rootEntity->update();
 
 	// 更新StaticMeshComponent
 	m_registry.view<TransformComponent, StaticMeshComponent>().each([this](auto entity, TransformComponent& transformComp, StaticMeshComponent& staticMeshComp) {

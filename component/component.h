@@ -23,35 +23,14 @@ struct TagComponent : public Component
 };
 
 /* Transform */
-const glm::vec3 ForwardVector = glm::vec3(1.0f, 0.0f, 0.0f);
-const glm::vec3 RightVector = glm::vec3(0.0f, 1.0f, 0.0f);
-const glm::vec3 UpVector = glm::vec3(0.0f, 0.0f, 1.0f);
-
-struct TransformComponent : public Component
+struct TransformComponent : public Transform, public Component
 {
-	glm::vec3 position = glm::vec3(0.0f);
-	glm::vec3 rotation = glm::vec3(0.0f);
-	glm::vec3 scale = glm::vec3(1.0f);
-
 	glm::mat4 localMatrix = glm::mat4(1.0f);
 	glm::mat4 worldMatrix = glm::mat4(1.0f);
 
 	virtual bool isValid() override
 	{
 		return true;
-	}
-
-	glm::mat4 calcModelMatrix()
-	{
-		glm::mat4 modelMatrix(1.0f);
-
-		modelMatrix = glm::translate(modelMatrix, position);
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), ForwardVector);
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.y), RightVector);
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.z), UpVector);
-		modelMatrix = glm::scale(modelMatrix, scale);
-
-		return modelMatrix;
 	}
 };
 
@@ -97,7 +76,7 @@ struct SkeletalMeshComponent : public MeshComponent
 };
 
 /* Animator */
-class AnimatorComponent : public Component
+struct AnimatorComponent : public Component
 {
 public:
 	AnimatorComponent();
@@ -111,7 +90,7 @@ public:
 	void merge(const AnimatorComponent& other);
 	void tick(float deltaTime);
 
-	void play(const std::string& name, bool loop = true);
+	void play(const std::string& name = "", bool loop = true);
 	void replay();
 	void pause();
 	void stop();

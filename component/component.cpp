@@ -1,6 +1,7 @@
 #include "component/component.h"
 #include "rendering/resource_factory.h"
 #include "rendering/renderer.h"
+#include <algorithm>
 
 void MeshComponent::updateUniformBuffer(std::shared_ptr<class Renderer> renderer, size_t bufferSize, void* bufferData)
 {
@@ -138,12 +139,70 @@ void AnimatorComponent::tick(float deltaTime)
 		return;
 	}
 
-	m_time += deltaTime;
+	if (animations.find(m_name) != animations.end())
+	{
+		auto& animation = animations[m_name];
+		for (auto& iter : animation->positionKeys)
+		{
+			const std::string& name = iter.first;
+			const std::vector<VectorKey>& positions = iter.second;
+
+			VectorKey val{ m_time };
+			const VectorKey& low = *std::lower_bound(positions.begin(), positions.end(), val);
+			const VectorKey& up = *std::upper_bound(positions.begin(), positions.end(), val);
+
+			float t = (m_time - low.time) / (up.time - low.time);
+			Bone& bone = skeleton->getBone(name);
+			bone.transform.position = glm::mix(low.value, up.value, t);
+		}
+
+		for (auto& iter : animation->rotationKeys)
+		{
+			const std::string& name = iter.first;
+			const std::vector<QuatKey>& rotations = iter.second;
+
+			QuatKey val{ m_time };
+			const QuatKey& low = *std::lower_bound(rotations.begin(), rotations.end(), val);
+			const QuatKey& up = *std::upper_bound(rotations.begin(), rotations.end(), val);
+
+			float t = (m_time - low.time) / (up.time - low.time);
+			Bone& bone = skeleton->getBone(name);
+			bone.transform.rotation = glm::eulerAngles(glm::slerp(low.value, up.value, t));
+		}
+
+		for (auto& iter : animation->scaleKeys)
+		{
+			const std::string& name = iter.first;
+			const std::vector<VectorKey>& scales = iter.second;
+
+			VectorKey val{ m_time };
+			const VectorKey& low = *std::lower_bound(scales.begin(), scales.end(), val);
+			const VectorKey& up = *std::upper_bound(scales.begin(), scales.end(), val);
+
+			float t = (m_time - low.time) / (up.time - low.time);
+			Bone& bone = skeleton->getBone(name);
+			bone.transform.scale = glm::mix(low.value, up.value, t);
+		}
+
+		m_time += deltaTime;
+	}
+
+	skeleton->update();
 }
 
 void AnimatorComponent::play(const std::string& name, bool loop)
 {
+	if (animations.empty())
+	{
+		return;
+	}
+
 	m_name = name;
+	if (name.empty())
+	{
+		m_name = animations.begin()->first;
+	}
+
 	m_loop = loop;
 	m_playing = true;
 	m_time = 0.0f;

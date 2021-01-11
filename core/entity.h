@@ -12,7 +12,7 @@ public:
 	void detach();
 	void destroy();
 
-	void tick();
+	void update();
 
 	template<typename T, typename... Args>
 	T& addComponent(Args&&... args)

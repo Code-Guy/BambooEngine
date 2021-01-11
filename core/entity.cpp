@@ -38,11 +38,11 @@ void Entity::destroy()
 	m_scene->getRegistry().remove(m_handle);
 }
 
-void Entity::tick()
+void Entity::update()
 {
 	auto& tag = getComponent<TagComponent>();
 	auto& transform = getComponent<TransformComponent>();
-	transform.localMatrix = transform.calcModelMatrix();
+	transform.localMatrix = transform.matrix();
 
 	if (m_parent)
 	{
@@ -56,6 +56,6 @@ void Entity::tick()
 
 	for (auto& iter : m_children)
 	{
-		iter->tick();
+		iter->update();
 	}
 }
