@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <map>
+#include <chrono>
 
 typedef uint32_t TimerHandle;
 
@@ -28,8 +29,11 @@ public:
 	void removeTimer(TimerHandle handle);
 
 private:
+	float chronoTime();
+
 	TimerHandle m_timerHandle;
 	std::map<TimerHandle, Timer> m_timers;
 
 	float m_time;
+	std::chrono::steady_clock::time_point m_beginTime;
 };

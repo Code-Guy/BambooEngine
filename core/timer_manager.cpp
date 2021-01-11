@@ -3,6 +3,7 @@
 void TimerManager::begin()
 {
 	m_time = 0.0f;
+	m_beginTime = std::chrono::steady_clock::now();
 }
 
 void TimerManager::tick(float deltaTime)
@@ -18,7 +19,10 @@ void TimerManager::tick(float deltaTime)
 			timer.timerCb(timer.currentTime - timer.lastTime);
 			if (timer.loop)
 			{
-				timer.currentTime -= timer.interval;
+				while (timer.currentTime > timer.interval)
+				{
+					timer.currentTime -= timer.interval;
+				}
 				timer.lastTime = timer.currentTime;
 			}
 			else
@@ -48,4 +52,10 @@ void TimerManager::removeTimer(TimerHandle handle)
 	{
 		m_timers.erase(handle);
 	}
+}
+
+float TimerManager::chronoTime()
+{
+	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
+	return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_beginTime).count();
 }

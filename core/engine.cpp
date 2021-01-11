@@ -42,13 +42,11 @@ void Engine::run()
 	m_scene->pre();
 	m_scene->begin();
 
-	m_beginTime = std::chrono::steady_clock::now();
+	m_lastTime = std::chrono::steady_clock::now();
 	m_lastTime = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(m_backend->getWindow()))
 	{
 		glfwPollEvents();
-
-		lockFrameRate(0);
 
 		m_renderer->wait();
 		m_scene->tick(m_deltaTime);
@@ -77,33 +75,28 @@ void Engine::destroy()
 	m_backend->destroy();
 }
 
-void Engine::evaluateTime()
+void Engine::evaluateTime(int targetFPS)
 {
 	// 计算当前帧所花的时间，计算帧率
-	std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
-	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(endTime - m_beginTime).count();
-	m_beginTime = endTime;
+	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
+	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTime).count();
+
+	if (targetFPS != 0)
+	{
+		long long deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - m_lastTime).count();
+		long long sleepTime = std::max(static_cast<long long>(1e9 / targetFPS) - deltaTime, 0ll);
+		
+		if (sleepTime > 0ll)
+		{
+			std::this_thread::sleep_for(std::chrono::nanoseconds(sleepTime));
+		}
+	}
+
+	m_lastTime = currentTime;
 
 	char title[100];
 	snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / m_deltaTime));
 	glfwSetWindowTitle(m_backend->getWindow(), title);
-}
-
-void Engine::lockFrameRate(int fps)
-{
-	if (fps == 0)
-	{
-		return;
-	}
-
-	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
-	long long renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - m_lastTime).count();
-	long long sleepTime = std::max(static_cast<long long>(1e9 / fps)  - renderTime, 0ll);
-	if (sleepTime > 0ll)
-	{
-		std::this_thread::sleep_for(std::chrono::nanoseconds(sleepTime));
-	}
-	m_lastTime = std::chrono::steady_clock::now();
 }
 
 void Engine::onViewportResized(uint32_t width, uint32_t height)
