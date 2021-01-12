@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <tuple>
+#include <boost/format.hpp>
 
 #include "component/component.h"
 
@@ -22,7 +23,7 @@ private:
 		StaticMeshComponent& staticMeshComp, SkeletalMeshComponent& skeletalMeshComp);
 	void processBoneNode(struct aiNode* assNode, std::shared_ptr<Skeleton>& skeleton);
 	void processSkeleton(struct aiMesh* assMesh, std::shared_ptr<Skeleton>& skeleton);
-	void processAnimation(const struct aiScene* assScene, AnimatorComponent& animatorComp);
+	void processAnimation(const struct aiScene* assScene, const std::string& filename, AnimatorComponent& animatorComp);
 
 	void processSection(struct aiMesh* assMesh, const struct aiScene* assScene, const std::string& filename, 
 		uint32_t baseIndex, std::vector<uint32_t>& indices, std::vector<Section>& sections);

@@ -11,7 +11,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
 /* assimp和glm的转换函数 */
@@ -70,7 +69,7 @@ void AssetLoader::loadModel(const std::string& filename, StaticMeshComponent& st
 
 	if (assScene->mNumAnimations > 0)
 	{
-		processAnimation(assScene, animatorComp);
+		processAnimation(assScene, filename, animatorComp);
 		return;
 	}
 
@@ -194,14 +193,15 @@ void AssetLoader::processSkeleton(struct aiMesh* assMesh, std::shared_ptr<Skelet
 	}
 }
 
-void AssetLoader::processAnimation(const struct aiScene* assScene, AnimatorComponent& animatorComp)
+void AssetLoader::processAnimation(const struct aiScene* assScene, const std::string& filename, AnimatorComponent& animatorComp)
 {
 	for (uint32_t i = 0; i < assScene->mNumAnimations; ++i)
 	{
 		aiAnimation* assAnimation = assScene->mAnimations[i];
 		std::shared_ptr<Animation> animation = std::make_shared<Animation>();
 
-		animation->name = assAnimation->mName.C_Str();
+		//animation->name = assAnimation->mName.C_Str();
+		animation->name = Utility::basename(filename);
 		animation->duration = static_cast<float>(assAnimation->mDuration);
 		animation->frameRate = static_cast<float>(assAnimation->mTicksPerSecond > 0.0 ? assAnimation->mTicksPerSecond : 24.0);
 		for (uint32_t j = 0; j < assAnimation->mNumChannels; ++j)

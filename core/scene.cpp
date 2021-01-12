@@ -17,7 +17,7 @@ void Scene::init(std::shared_ptr<class Renderer> renderer)
 	//m_timerManager->addTimer(0.5f, std::bind(&Scene::tickEvent, this, std::placeholders::_1), true);
 
 	// 初始化摄像机
-	m_camera = std::make_unique<Camera>(glm::vec3(12.0f, 8.0f, 5.0f), 220.0f, -18.0f, 50.0f, 0.1f);
+	m_camera = std::make_unique<Camera>(glm::vec3(8.5f, -1.9f, 3.9f), -194.4f, -18.7f, 2.0f, 0.1f);
 	m_camera->setFovy(45.0f);
 	m_camera->setClipping(0.1f, 1000.0f);
 
@@ -39,8 +39,12 @@ void Scene::init(std::shared_ptr<class Renderer> renderer)
 		"asset/model/mannequin/mannequin.fbx",
 		"asset/model/dragon/dragon.fbx",
 		"asset/model/sponza/sponza.fbx",
+		"asset/model/exclamation/exclamation.fbx",
 
 		"asset/model/mannequin/mannequin_punch.fbx",
+		"asset/model/mannequin/mannequin_run.fbx",
+		"asset/model/mannequin/mannequin_shoot.fbx",
+		"asset/model/mannequin/mannequin_climb.fbx",
 	};
 
 	for (const std::string& meshName : meshNames)
@@ -85,9 +89,20 @@ void Scene::init(std::shared_ptr<class Renderer> renderer)
 	}
 
 	//m_entities["mannequin"]->attach(m_entities["sponza"]);
-	m_entities["dragon"]->attach(m_entities["mannequin"]);
-	m_entities["dragon"]->getComponent<TransformComponent>().position = glm::vec3(4.0f, 4.0f, 4.0f);
-	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(20.0f, 6.0f, 8.0f);
+	//m_entities["dragon"]->attach(m_entities["mannequin"]);
+	//m_entities["dragon"]->getComponent<TransformComponent>().position = glm::vec3(4.0f, 4.0f, 4.0f);
+	//m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(20.0f, 6.0f, 8.0f);
+
+	for (uint32_t i = 0; i < 3; i++)
+	{
+		auto entity = createEntity((boost::format("mannequin%d") % (i + 1)).str());
+		entity->cloneComponent<SkeletalMeshComponent>(m_entities["mannequin"]);
+		entity->cloneComponent<AnimatorComponent>(m_entities["mannequin"]);
+		entity->attach(m_rootEntity);
+	}
+
+	m_entities["exclamation"]->attach(m_entities["dragon"]);
+	m_entities["exclamation"]->getComponent<TransformComponent>().position = glm::vec3(0.0f, 0.0f, 1.2f);
 }
 
 void Scene::destroy()
@@ -112,9 +127,18 @@ void Scene::begin()
 	m_timerManager->begin();
 
 	// 播放动画
-	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
-		animatorComp.play();
-	});
+	//m_registry.view<AnimatorComponent>().each([](auto entity, AnimatorComponent& animatorComp) {
+	//	animatorComp.play("mannequin_shoot");
+	//});
+	m_entities["mannequin"]->getComponent<AnimatorComponent>().play("mannequin_run");
+	m_entities["mannequin1"]->getComponent<AnimatorComponent>().play("mannequin_punch");
+	m_entities["mannequin2"]->getComponent<AnimatorComponent>().play("mannequin_shoot");
+	m_entities["mannequin3"]->getComponent<AnimatorComponent>().play("mannequin_climb");
+
+	m_entities["mannequin"]->getComponent<TransformComponent>().position = glm::vec3(4.0f, 2.0f, 0.0);
+	m_entities["mannequin1"]->getComponent<TransformComponent>().position = glm::vec3(1.0f, 0.0f, 0.0f);
+	m_entities["mannequin2"]->getComponent<TransformComponent>().position = glm::vec3(-1.0f, 1.0f, 0.0f);
+	m_entities["mannequin3"]->getComponent<TransformComponent>().position = glm::vec3(-1.0f, -1.0f, 0.0f);
 }
 
 void Scene::tick(float deltaTime)
@@ -176,7 +200,7 @@ void Scene::tickTransform(float deltaTime)
 
 	// 更新TransformComponent
 	m_entities["dragon"]->getComponent<TransformComponent>().rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
-	//m_entities["mannequin"]->getComponent<TransformComponent>().position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
+	m_entities["dragon"]->getComponent<TransformComponent>().position = glm::vec3(0.0f, 0.0f, std::sin(m_timerManager->time()) * 1.0f + 1.0f);
 	m_rootEntity->update();
 
 	// 更新StaticMeshComponent

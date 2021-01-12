@@ -21,6 +21,12 @@ public:
 	}
 
 	template<typename T>
+	T& cloneComponent(std::shared_ptr<Entity> other)
+	{
+		return m_scene->getRegistry().emplace<T>(m_handle, other->getComponent<T>());
+	}
+
+	template<typename T>
 	T& getComponent()
 	{
 		return m_scene->getRegistry().get<T>(m_handle);
