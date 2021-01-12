@@ -5,10 +5,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #define SWAPCHAIN_IMAGE_NUM 3
 #define INVALID_BONE -1
 #define MAX_BONE_NUM 100
+#define BONE_NUM_PER_VERTEX 4
 
 enum class EPipelineType
 {
@@ -44,7 +46,7 @@ struct QuatTransform
 	glm::vec3 position = glm::vec3(0.0f);
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 scale = glm::vec3(1.0f);
-
+	
 	glm::mat4 matrix()
 	{
 		glm::mat4 modelMatrix(1.0f);

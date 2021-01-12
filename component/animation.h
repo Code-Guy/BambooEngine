@@ -9,15 +9,18 @@
 struct Bone
 {
 	std::string name;
-	glm::mat4 localTransform;
-	glm::mat4 globalTransform;
+	glm::mat4 globalInverseBindPoseMatrix;
+	glm::mat4 localBindPoseMatrix;
+	QuatTransform animatedTransform;
 
 	Bone* parent = nullptr;
 	std::vector<Bone*> children;
 
-	QuatTransform transform;
-
 	void update();
+	glm::mat4 matrix();
+
+private:
+	glm::mat4 globalBindPoseMatrix;
 };
 
 struct Skeleton
@@ -58,7 +61,7 @@ struct Animation
 {
 	std::string name;
 	float duration;
-	float step;
+	float frameRate;
 
 	bool isCompatible(std::shared_ptr<Skeleton> skeleton);
 

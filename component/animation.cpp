@@ -2,14 +2,19 @@
 
 void Bone::update()
 {
-	glm::mat4 updatedLocalTransform = transform.matrix() * localTransform;
+	glm::mat4 localMatrix = animatedTransform.matrix();
+	if (localMatrix == glm::mat4(1.0f))
+	{
+		localMatrix = localBindPoseMatrix;
+	}
+
 	if (parent)
 	{
-		globalTransform = parent->globalTransform * updatedLocalTransform;
+		globalBindPoseMatrix = parent->globalBindPoseMatrix * localMatrix;
 	}
 	else
 	{
-		globalTransform = updatedLocalTransform;
+		globalBindPoseMatrix = localMatrix;
 	}
 
 	for (auto& iter : children)
@@ -18,25 +23,30 @@ void Bone::update()
 	}
 }
 
+glm::mat4 Bone::matrix()
+{
+	return globalBindPoseMatrix * globalInverseBindPoseMatrix;
+}
+
 bool Animation::isCompatible(std::shared_ptr<Skeleton> skeleton)
 {
 	for (auto& iter : positionKeys)
 	{
-		if (!skeleton->hasBone(name))
+		if (!skeleton->hasBone(iter.first))
 		{
 			return false;
 		}
 	}
 	for (auto& iter : rotationKeys)
 	{
-		if (!skeleton->hasBone(name))
+		if (!skeleton->hasBone(iter.first))
 		{
 			return false;
 		}
 	}
 	for (auto& iter : scaleKeys)
 	{
-		if (!skeleton->hasBone(name))
+		if (!skeleton->hasBone(iter.first))
 		{
 			return false;
 		}

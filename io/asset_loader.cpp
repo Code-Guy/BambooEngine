@@ -22,38 +22,12 @@ glm::vec3 assVectorToGlmVector(const aiVector3D& assVector)
 
 glm::quat assQuatToGlmQuat(const aiQuaternion& assQuat)
 {
-	glm::quat q;
-	q.w = assQuat.w;
-	q.x = assQuat.x;
-	q.y = assQuat.y;
-	q.z = assQuat.z;
-	return q;
+	return glm::quat(assQuat.w, assQuat.x, assQuat.y, assQuat.z);
 }
 
 glm::mat4 assMatToGlmMat(const aiMatrix4x4& assMat)
 {
-	glm::mat4 mat;
-	mat[0][0] = assMat.a1;
-	mat[1][0] = assMat.b1;
-	mat[2][0] = assMat.c1;
-	mat[3][0] = assMat.d1;
-
-	mat[0][1] = assMat.a2;
-	mat[1][1] = assMat.b2;
-	mat[2][1] = assMat.c2;
-	mat[3][1] = assMat.d2;
-
-	mat[0][2] = assMat.a3;
-	mat[1][2] = assMat.b3;
-	mat[2][2] = assMat.c3;
-	mat[3][2] = assMat.d3;
-
-	mat[0][3] = assMat.a4;
-	mat[1][3] = assMat.b4;
-	mat[2][3] = assMat.c4;
-	mat[3][3] = assMat.d4;
-
-	return mat;
+	return glm::transpose(glm::make_mat4(&assMat.a1));
 }
 
 AssetLoader& AssetLoader::getInstance()
@@ -183,16 +157,16 @@ void AssetLoader::processMeshNode(aiNode* assNode, const aiScene* assScene, cons
 void AssetLoader::processBoneNode(struct aiNode* assNode, std::shared_ptr<Skeleton>& skeleton)
 {
 	std::string parentName = assNode->mName.C_Str();
-	auto& nameIndexMap = skeleton->nameIndexMap;
-	if (nameIndexMap.find(parentName) != nameIndexMap.end())
+	if (skeleton->hasBone(parentName))
 	{
-		Bone& parentBone = skeleton->bones[nameIndexMap[parentName]];
+		Bone& parentBone = skeleton->getBone(parentName);
+		parentBone.localBindPoseMatrix = assMatToGlmMat(assNode->mTransformation);
 		for (uint32_t i = 0; i < assNode->mNumChildren; ++i)
 		{
 			std::string childName = assNode->mChildren[i]->mName.C_Str();
-			if (nameIndexMap.find(childName) != nameIndexMap.end())
+			if (skeleton->hasBone(childName))
 			{
-				Bone& childBone = skeleton->bones[nameIndexMap[childName]];
+				Bone& childBone = skeleton->getBone(childName);
 				parentBone.children.push_back(&childBone);
 				childBone.parent = &parentBone;
 			}
@@ -211,7 +185,11 @@ void AssetLoader::processSkeleton(struct aiMesh* assMesh, std::shared_ptr<Skelet
 	{
 		aiBone* assBone = assMesh->mBones[i];
 		std::string name = assBone->mName.C_Str();
-		skeleton->bones.push_back({ name, assMatToGlmMat(assBone->mOffsetMatrix) });
+
+		Bone bone;
+		bone.name = name;
+		bone.globalInverseBindPoseMatrix = assMatToGlmMat(assBone->mOffsetMatrix);
+		skeleton->bones.push_back(bone);
 		skeleton->nameIndexMap[name] = i;
 	}
 }
@@ -225,13 +203,12 @@ void AssetLoader::processAnimation(const struct aiScene* assScene, AnimatorCompo
 
 		animation->name = assAnimation->mName.C_Str();
 		animation->duration = static_cast<float>(assAnimation->mDuration);
-		double ticksPerSecond = assAnimation->mTicksPerSecond > 0.0 ? assAnimation->mTicksPerSecond : 24.0;
-		animation->step = 1.0f / static_cast<float>(ticksPerSecond);
+		animation->frameRate = static_cast<float>(assAnimation->mTicksPerSecond > 0.0 ? assAnimation->mTicksPerSecond : 24.0);
 		for (uint32_t j = 0; j < assAnimation->mNumChannels; ++j)
 		{
 			aiNodeAnim* channel = assAnimation->mChannels[j];
 			std::string name = channel->mNodeName.C_Str();
-
+			Utility::replace(name, "_$AssimpFbx$_Rotation", "");
 			for (uint32_t k = 0; k < channel->mNumPositionKeys; ++k)
 			{
 				const aiVectorKey& key = channel->mPositionKeys[k];
@@ -308,6 +285,9 @@ void AssetLoader::processStaticVertices(struct aiMesh* assMesh, const struct aiS
 
 void AssetLoader::processSkeletalVertices(struct aiMesh* assMesh, const struct aiScene* assScene, std::vector<SkeletalVertex>& skeletalVertices)
 {
+	// base vertice index
+	uint32_t baseVerticeIndex = static_cast<uint32_t>(skeletalVertices.size());
+
 	// vertices
 	for (uint32_t i = 0; i < assMesh->mNumVertices; ++i)
 	{
@@ -317,7 +297,7 @@ void AssetLoader::processSkeletalVertices(struct aiMesh* assMesh, const struct a
 		vertex.normal = { assMesh->mNormals[i].x, assMesh->mNormals[i].y, assMesh->mNormals[i].z };
 
 		// 初始化骨骼索引和权重列表
-		for (uint32_t j = 0; j < 4; ++j)
+		for (uint32_t j = 0; j < BONE_NUM_PER_VERTEX; ++j)
 		{
 			vertex.bones[j] = INVALID_BONE;
 			vertex.weights[j] = 0.0f;
@@ -327,18 +307,26 @@ void AssetLoader::processSkeletalVertices(struct aiMesh* assMesh, const struct a
 	}
 
 	// 缓存每个顶点当前已经设置的骨骼数量
-	std::vector<uint32_t> vertexBoneNums(skeletalVertices.size(), 0);
+	std::vector<uint32_t> vertexBoneNums(assMesh->mNumVertices, 0);
 	for (uint8_t i = 0; i < static_cast<uint8_t>(assMesh->mNumBones); ++i)
 	{
 		aiBone* assBone = assMesh->mBones[i];
-
+		std::string name = assBone->mName.C_Str();
 		for (uint32_t j = 0; j < assBone->mNumWeights; ++j)
 		{
 			aiVertexWeight& weight = assBone->mWeights[j];
 
 			uint32_t vertexBoneIndex = vertexBoneNums[weight.mVertexId]++;
-			skeletalVertices[weight.mVertexId].bones[vertexBoneIndex] = i;
-			skeletalVertices[weight.mVertexId].weights[vertexBoneIndex] = weight.mWeight;
+			uint32_t vertexIndex = baseVerticeIndex + weight.mVertexId;
+			if (vertexBoneIndex < BONE_NUM_PER_VERTEX)
+			{
+				skeletalVertices[vertexIndex].bones[vertexBoneIndex] = i;
+				skeletalVertices[vertexIndex].weights[vertexBoneIndex] = weight.mWeight;
+			}
+			else
+			{
+				printf("vertex bone index: %d exceeds max bone num per vertex: %d\n", vertexBoneIndex, BONE_NUM_PER_VERTEX);
+			}
 		}
 	}
 }

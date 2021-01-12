@@ -31,10 +31,9 @@ void main()
 	mat4 boneTransform = mat4(0.0);
 	for (int i = 0; i < BONE_NUM_PER_VERTEX; ++i)
 	{
-		boneTransform += ubo.gBones[inBones[i]] * inWeights[1];
+		boneTransform += ubo.gBones[inBones[i]] * inWeights[i];
 	}
 
-	boneTransform = ubo.gBones[0];
 	vec4 localPosition = boneTransform * vec4(inPosition, 1.0);
 	vec4 localNormal = boneTransform * vec4(inNormal, 0.0);
 

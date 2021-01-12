@@ -134,26 +134,37 @@ void AnimatorComponent::merge(const AnimatorComponent& other)
 
 void AnimatorComponent::tick(float deltaTime)
 {
-	if (!m_playing || m_paused)
-	{
-		return;
-	}
-
-	if (animations.find(m_name) != animations.end())
+	if (m_playing && !m_paused && animations.find(m_name) != animations.end())
 	{
 		auto& animation = animations[m_name];
+		float animTime = m_time * animation->frameRate;
+		if (animTime > animation->duration)
+		{
+			if (m_loop)
+			{
+				animTime = fmod(animTime, animation->duration);
+			}
+			else
+			{
+				stop();
+				return;
+			}
+		}
 		for (auto& iter : animation->positionKeys)
 		{
 			const std::string& name = iter.first;
 			const std::vector<VectorKey>& positions = iter.second;
 
-			VectorKey val{ m_time };
-			const VectorKey& low = *std::lower_bound(positions.begin(), positions.end(), val);
-			const VectorKey& up = *std::upper_bound(positions.begin(), positions.end(), val);
+			VectorKey val{ animTime };
+			auto low = std::lower_bound(positions.begin(), positions.end(), val);
+			auto up = std::upper_bound(positions.begin(), positions.end(), val);
 
-			float t = (m_time - low.time) / (up.time - low.time);
+			const VectorKey& lowKey = low == positions.begin() ? *low : *(low - 1);
+			const VectorKey& upKey = up == positions.end() ? *(up - 1) : *up;
+
+			float t = lowKey.time != upKey.time ? (animTime - lowKey.time) / (upKey.time - lowKey.time) : 0.0f;
 			Bone& bone = skeleton->getBone(name);
-			bone.transform.position = glm::mix(low.value, up.value, t);
+			bone.animatedTransform.position = glm::mix(lowKey.value, upKey.value, t);
 		}
 
 		for (auto& iter : animation->rotationKeys)
@@ -161,13 +172,16 @@ void AnimatorComponent::tick(float deltaTime)
 			const std::string& name = iter.first;
 			const std::vector<QuatKey>& rotations = iter.second;
 
-			QuatKey val{ m_time };
-			const QuatKey& low = *std::lower_bound(rotations.begin(), rotations.end(), val);
-			const QuatKey& up = *std::upper_bound(rotations.begin(), rotations.end(), val);
+			QuatKey val{ animTime };
+			auto low = std::lower_bound(rotations.begin(), rotations.end(), val);
+			auto up = std::upper_bound(rotations.begin(), rotations.end(), val);
 
-			float t = (m_time - low.time) / (up.time - low.time);
+			const QuatKey& lowKey = low == rotations.begin() ? *low : *(low - 1);
+			const QuatKey& upKey = up == rotations.end() ? *(up - 1) : *up;
+
+			float t = lowKey.time != upKey.time ? (animTime - lowKey.time) / (upKey.time - lowKey.time) : 0.0f;
 			Bone& bone = skeleton->getBone(name);
-			bone.transform.rotation = glm::eulerAngles(glm::slerp(low.value, up.value, t));
+			bone.animatedTransform.rotation = glm::slerp(lowKey.value, upKey.value, t);
 		}
 
 		for (auto& iter : animation->scaleKeys)
@@ -175,19 +189,27 @@ void AnimatorComponent::tick(float deltaTime)
 			const std::string& name = iter.first;
 			const std::vector<VectorKey>& scales = iter.second;
 
-			VectorKey val{ m_time };
-			const VectorKey& low = *std::lower_bound(scales.begin(), scales.end(), val);
-			const VectorKey& up = *std::upper_bound(scales.begin(), scales.end(), val);
+			VectorKey val{ animTime };
+			auto low = std::lower_bound(scales.begin(), scales.end(), val);
+			auto up = std::upper_bound(scales.begin(), scales.end(), val);
 
-			float t = (m_time - low.time) / (up.time - low.time);
+			const VectorKey& lowKey = low == scales.begin() ? *low : *(low - 1);
+			const VectorKey& upKey = up == scales.end() ? *(up - 1) : *up;
+
+			float t = lowKey.time != upKey.time ? (animTime - lowKey.time) / (upKey.time - lowKey.time) : 0.0f;
 			Bone& bone = skeleton->getBone(name);
-			bone.transform.scale = glm::mix(low.value, up.value, t);
+			bone.animatedTransform.scale = glm::mix(lowKey.value, upKey.value, t);
 		}
 
 		m_time += deltaTime;
 	}
 
 	skeleton->update();
+	uint32_t boneNum = std::min(static_cast<uint32_t>(skeleton->bones.size()), static_cast<uint32_t>(MAX_BONE_NUM));
+	for (size_t i = 0; i < boneNum; ++i)
+	{
+		gBones[i] = skeleton->bones[i].matrix();
+	}
 }
 
 void AnimatorComponent::play(const std::string& name, bool loop)

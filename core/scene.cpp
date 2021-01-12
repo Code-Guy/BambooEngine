@@ -13,7 +13,7 @@ void Scene::init(std::shared_ptr<class Renderer> renderer)
 	// 初始化计时管理器
 	m_timerManager = std::make_shared<TimerManager>();
 	m_timerManager->addTimer(0.0166f, std::bind(&Scene::tickTransform, this, std::placeholders::_1), true);
-	m_timerManager->addTimer(0.0333f, std::bind(&Scene::tickAnimation, this, std::placeholders::_1), true);
+	m_timerManager->addTimer(0.0166f, std::bind(&Scene::tickAnimation, this, std::placeholders::_1), true);
 	//m_timerManager->addTimer(0.5f, std::bind(&Scene::tickEvent, this, std::placeholders::_1), true);
 
 	// 初始化摄像机
@@ -38,9 +38,9 @@ void Scene::init(std::shared_ptr<class Renderer> renderer)
 		//"asset/model/armadillo/armadillo.fbx",
 		"asset/model/mannequin/mannequin.fbx",
 		"asset/model/dragon/dragon.fbx",
-		//"asset/model/sponza/sponza.fbx",
+		"asset/model/sponza/sponza.fbx",
 
-		"asset/model/mannequin/mannequin_run.fbx"
+		"asset/model/mannequin/mannequin_punch.fbx",
 	};
 
 	for (const std::string& meshName : meshNames)
@@ -110,6 +110,11 @@ void Scene::pre()
 void Scene::begin()
 {
 	m_timerManager->begin();
+
+	// 播放动画
+	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
+		animatorComp.play();
+	});
 }
 
 void Scene::tick(float deltaTime)
@@ -124,13 +129,8 @@ void Scene::tick(float deltaTime)
 		m_camera->setAspect(static_cast<float>(viewportSize.x) / viewportSize.y);
 	}
 
-	// 更新动画，上传骨骼数据
-	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([this](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
-		TransformComponent transform;
-		transform.rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
-		//transform.position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
-		glm::mat4 mat = transform.matrix();
-		animatorComp.gBones[0] = mat;
+	// 上传骨骼数据
+	m_registry.view<SkeletalMeshComponent, AnimatorComponent>().each([this, deltaTime](auto entity, SkeletalMeshComponent& skeletalMeshComp, AnimatorComponent& animatorComp) {
 		skeletalMeshComp.updateUniformBuffer(m_renderer, sizeof(SkeletalMeshUBO), static_cast<void*>(animatorComp.gBones));
 	});
 }
@@ -198,7 +198,19 @@ void Scene::tickTransform(float deltaTime)
 
 void Scene::tickAnimation(float deltaTime)
 {
+	// 更新动画
+	m_registry.view<AnimatorComponent>().each([this, deltaTime](auto entity, AnimatorComponent& animatorComp) {
+		//Transform transform;
+		//transform.rotation = glm::vec3(0.0f, 0.0f, m_timerManager->time() * 90.0f);
+		//transform.position = glm::vec3(std::sin(m_timerManager->time()) * 100.0f, 0.0f, 0.0f);
+		//glm::mat4 mat = transform.matrix();
 
+		//animatorComp.skeleton->getBone("calf_l").animatedTransform.rotation = glm::vec3(m_timerManager->time() * 2.0f, 0.0f, 0.0f);
+		//animatorComp.skeleton->getBone("calf_r").animatedTransform.rotation = glm::vec3(m_timerManager->time() * 2.0f, 0.0f, 0.0f);
+		//animatorComp.skeleton->getBone("hand_l").animatedTransform.rotation = glm::vec3(m_timerManager->time() * 2.0f, 0.0f, 0.0f);
+		//animatorComp.skeleton->getBone("middle_02_l").animatedTransform.rotation = glm::vec3(0.0f, m_timerManager->time() * 2.0f, 0.0f);
+		animatorComp.tick(deltaTime);
+	});
 }
 
 void Scene::tickEvent(float deltaTime)
