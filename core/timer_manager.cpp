@@ -3,7 +3,7 @@
 void TimerManager::begin()
 {
 	m_time = 0.0f;
-	m_beginTime = std::chrono::steady_clock::now();
+	m_beginTime = std::chrono::high_resolution_clock::now();
 }
 
 void TimerManager::tick(float deltaTime)
@@ -56,6 +56,6 @@ void TimerManager::removeTimer(TimerHandle handle)
 
 float TimerManager::chronoTime()
 {
-	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
+	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
 	return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_beginTime).count();
 }

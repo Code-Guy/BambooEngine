@@ -4,8 +4,8 @@
 #include "rendering/shader_manager.h"
 #include "input/input_manager.h"
 #include "config/config_manager.h"
+#include "utility/utility.h"
 #include "scene.h"
-#include <thread>
 
 void Engine::init()
 {
@@ -42,18 +42,20 @@ void Engine::run()
 	m_scene->pre();
 	m_scene->begin();
 
-	m_lastTime = std::chrono::steady_clock::now();
-	m_lastTimeAfterSleep = std::chrono::steady_clock::now();
+	m_lastTime = std::chrono::high_resolution_clock::now();
+	m_lastTimeAfterSleep = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(m_backend->getWindow()))
 	{
 		glfwPollEvents();
-		evaluateTime();
 
 		m_renderer->wait();
 		m_scene->tick(m_deltaTime);
 		m_renderer->update();
 		m_renderer->submit();
 		m_renderer->present();
+
+		updateTitle();
+		evaluateTime(false);
 	}
 
 	vkDeviceWaitIdle(m_backend->getDevice());
@@ -74,29 +76,32 @@ void Engine::destroy()
 	m_backend->destroy();
 }
 
-void Engine::evaluateTime(int targetFPS)
+void Engine::updateTitle()
 {
-	// 计算当前帧所花的时间，计算帧率
-	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
-	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTime).count();
-	m_lastTime = currentTime;
-
-	if (targetFPS != 0)
-	{
-		long long renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - m_lastTimeAfterSleep).count();
-		long long sleepTime = std::max(static_cast<long long>(1e9 / targetFPS) - renderTime, 0ll);
-		m_lastTimeAfterSleep = currentTime + std::chrono::nanoseconds(sleepTime);
-
-		if (sleepTime > 0ll)
-		{
-			std::this_thread::sleep_for(std::chrono::nanoseconds(sleepTime));
-		}
-		//m_lastTimeAfterSleep = std::chrono::steady_clock::now();
-	}
-
 	char title[100];
 	snprintf(title, sizeof(title), "Bamboo Engine | FPS: %d", static_cast<int>(1.0f / m_deltaTime));
 	glfwSetWindowTitle(m_backend->getWindow(), title);
+}
+
+void Engine::evaluateTime(bool limitFrameRate)
+{
+	// 计算当前帧所花的时间，计算帧率
+	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTime).count();
+	m_lastTime = currentTime;
+
+	// Governing the Frame Rate
+	if (limitFrameRate)
+	{
+		float renderTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTimeAfterSleep).count();
+		float sleepTime = std::max(1.0f / 60.0f - renderTime, 0.0f);
+
+		if (sleepTime > 0.0f)
+		{
+			Utility::sleep(sleepTime);
+		}
+		m_lastTimeAfterSleep = std::chrono::high_resolution_clock::now();
+	}
 }
 
 void Engine::onViewportResized(uint32_t width, uint32_t height)

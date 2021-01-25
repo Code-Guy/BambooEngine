@@ -11,14 +11,15 @@ public:
 	void destroy();
 
 private:
-	void evaluateTime(int targetFPS = 0);
+	void updateTitle();
+	void evaluateTime(bool limitFrameRate = false);
 	void onViewportResized(uint32_t width, uint32_t height);
 
 	std::shared_ptr<class GraphicsBackend> m_backend;
 	std::shared_ptr<class Renderer> m_renderer;
 	std::shared_ptr<class Scene> m_scene;
 
-	std::chrono::steady_clock::time_point m_lastTime;
-	std::chrono::steady_clock::time_point m_lastTimeAfterSleep;
+	std::chrono::high_resolution_clock::time_point m_lastTime;
+	std::chrono::high_resolution_clock::time_point m_lastTimeAfterSleep;
 	float m_deltaTime;
 };

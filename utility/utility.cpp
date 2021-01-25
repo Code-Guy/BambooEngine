@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <array>
 #include <vector>
+#include <chrono>
+#include <thread>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -76,4 +78,13 @@ std::vector<std::string> Utility::traverseFiles(const std::string& directory)
 	}
 
 	return filenames;
+}
+
+void Utility::sleep(float t)
+{
+	static constexpr std::chrono::duration<double> MinSleepDuration(0);
+	auto start = std::chrono::high_resolution_clock::now();
+	while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count() < t) {
+		std::this_thread::sleep_for(MinSleepDuration);
+	}
 }

@@ -35,5 +35,5 @@ private:
 	std::map<TimerHandle, Timer> m_timers;
 
 	float m_time;
-	std::chrono::steady_clock::time_point m_beginTime;
+	std::chrono::high_resolution_clock::time_point m_beginTime;
 };

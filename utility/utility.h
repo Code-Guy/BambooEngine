@@ -14,6 +14,8 @@ public:
 	static std::string basename(const std::string& filename);
 	static std::vector<std::string> traverseFiles(const std::string& directory);
 
+	static void sleep(float t);
+
 private:
 
 };
