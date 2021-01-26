@@ -43,9 +43,13 @@ void Engine::run()
 	m_scene->begin();
 
 	m_lastTime = std::chrono::high_resolution_clock::now();
-	m_lastTimeAfterSleep = std::chrono::high_resolution_clock::now();
-	while (!glfwWindowShouldClose(m_backend->getWindow()))
+	while (true)
 	{
+		auto beginTime = std::chrono::high_resolution_clock::now();
+		if (glfwWindowShouldClose(m_backend->getWindow()))
+		{
+			break;
+		}
 		glfwPollEvents();
 
 		m_renderer->wait();
@@ -55,7 +59,10 @@ void Engine::run()
 		m_renderer->present();
 
 		updateTitle();
-		evaluateTime(false);
+		auto endTime = std::chrono::high_resolution_clock::now();
+		m_renderTime = std::chrono::duration<float, std::chrono::seconds::period>(endTime - beginTime).count();
+
+		evaluateTime(true);
 	}
 
 	vkDeviceWaitIdle(m_backend->getDevice());
@@ -85,23 +92,20 @@ void Engine::updateTitle()
 
 void Engine::evaluateTime(bool limitFrameRate)
 {
-	// 计算当前帧所花的时间，计算帧率
-	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
-	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTime).count();
-	m_lastTime = currentTime;
-
 	// Governing the Frame Rate
 	if (limitFrameRate)
 	{
-		float renderTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTimeAfterSleep).count();
-		float sleepTime = std::max(1.0f / 60.0f - renderTime, 0.0f);
-
+		float sleepTime = std::max(1.0f / 60.0f - m_renderTime, 0.0f);
 		if (sleepTime > 0.0f)
 		{
-			Utility::sleep(sleepTime);
+			Utility::preciseSleep(sleepTime);
 		}
-		m_lastTimeAfterSleep = std::chrono::high_resolution_clock::now();
 	}
+
+	// 计算当前帧所花的时间，计算帧率
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	m_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_lastTime).count();
+	m_lastTime = currentTime;
 }
 
 void Engine::onViewportResized(uint32_t width, uint32_t height)

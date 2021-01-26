@@ -20,6 +20,6 @@ private:
 	std::shared_ptr<class Scene> m_scene;
 
 	std::chrono::high_resolution_clock::time_point m_lastTime;
-	std::chrono::high_resolution_clock::time_point m_lastTimeAfterSleep;
+	float m_renderTime;
 	float m_deltaTime;
 };

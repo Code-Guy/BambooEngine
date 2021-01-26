@@ -15,6 +15,7 @@ public:
 	static std::vector<std::string> traverseFiles(const std::string& directory);
 
 	static void sleep(float t);
+	static void preciseSleep(float t);
 
 private:
 

@@ -82,9 +82,14 @@ std::vector<std::string> Utility::traverseFiles(const std::string& directory)
 
 void Utility::sleep(float t)
 {
-	static constexpr std::chrono::duration<double> MinSleepDuration(0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(t * 1000)));
+}
+
+void Utility::preciseSleep(float t)
+{
+	static constexpr std::chrono::duration<double> kMinSleepDuration(0);
 	auto start = std::chrono::high_resolution_clock::now();
 	while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count() < t) {
-		std::this_thread::sleep_for(MinSleepDuration);
+		std::this_thread::sleep_for(kMinSleepDuration);
 	}
 }
