@@ -40,6 +40,17 @@ void TimerManager::end()
 	m_timers.clear();
 }
 
+float TimerManager::time()
+{
+	return m_time;
+}
+
+float TimerManager::chronoTime()
+{
+	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_beginTime).count();
+}
+
 TimerHandle TimerManager::addTimer(float interval, std::function<void(float)> timerCb, bool loop)
 {
 	m_timers[m_timerHandle++] = { interval, timerCb, loop };
@@ -52,10 +63,4 @@ void TimerManager::removeTimer(TimerHandle handle)
 	{
 		m_timers.erase(handle);
 	}
-}
-
-float TimerManager::chronoTime()
-{
-	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
-	return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_beginTime).count();
 }

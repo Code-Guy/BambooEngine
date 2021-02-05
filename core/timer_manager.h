@@ -23,14 +23,13 @@ public:
 	void tick(float deltaTime);
 	void end();
 
-	float time() { return m_time; }
+	float time();
+	float chronoTime();
 
 	TimerHandle addTimer(float interval, std::function<void(float)> timerCb, bool loop = false);
 	void removeTimer(TimerHandle handle);
 
 private:
-	float chronoTime();
-
 	TimerHandle m_timerHandle;
 	std::map<TimerHandle, Timer> m_timers;
 
