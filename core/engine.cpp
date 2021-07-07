@@ -62,7 +62,7 @@ void Engine::run()
 		auto endTime = std::chrono::high_resolution_clock::now();
 		m_renderTime = std::chrono::duration<float, std::chrono::seconds::period>(endTime - beginTime).count();
 
-		evaluateTime(true);
+		evaluateTime();
 	}
 
 	vkDeviceWaitIdle(m_backend->getDevice());
@@ -90,12 +90,12 @@ void Engine::updateTitle()
 	glfwSetWindowTitle(m_backend->getWindow(), title);
 }
 
-void Engine::evaluateTime(bool limitFrameRate)
+void Engine::evaluateTime(int targetFPS)
 {
 	// Governing the Frame Rate
-	if (limitFrameRate)
+	if (targetFPS != 0)
 	{
-		float sleepTime = std::max(1.0f / 60.0f - m_renderTime, 0.0f);
+		float sleepTime = std::max(1.0f / targetFPS - m_renderTime, 0.0f);
 		if (sleepTime > 0.0f)
 		{
 			Utility::preciseSleep(sleepTime);

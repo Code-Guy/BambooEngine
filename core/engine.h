@@ -12,7 +12,7 @@ public:
 
 private:
 	void updateTitle();
-	void evaluateTime(bool limitFrameRate = false);
+	void evaluateTime(int targetFPS = 60);
 	void onViewportResized(uint32_t width, uint32_t height);
 
 	std::shared_ptr<class GraphicsBackend> m_backend;
